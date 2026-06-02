@@ -1,0 +1,27 @@
+# Keil MDK build outputs
+OBJ/
+*.crf
+*.d
+*.dep
+*.axf
+*.htm
+*.lnp
+*.build_log.htm
+
+# Editor
+*.uvguix.*
+JLinkSettings.ini
+
+# Output files
+*.o
+*.out
+*.hex
+*.bin
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
