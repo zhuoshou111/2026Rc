@@ -1685,7 +1685,7 @@ void Servo_Stretch(void)
 
 void claw_open(void)
 {
-		servo_angle2=15;
+		servo_angle2=0;
 		SERVO2_CONTRAL(servo_angle2);
 		delay_ms(25);
 		SERVO2_CONTRAL(servo_angle2);

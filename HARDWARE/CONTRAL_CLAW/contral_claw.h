@@ -20,7 +20,7 @@
 计算公式为：爪子脉冲高度=99+(转盘实际高度-80)/20*24
 
 */
-#define claw_most_up    265   //            升到最高的位置            
+#define claw_most_up    260   //            升到最高的位置            
 #define camera_position  2       //               扫码的位置
 #define claw_most_down  14       //          降低到最低的位置
 #define circle_capture1  80  //          一层放置靶心识别的高度

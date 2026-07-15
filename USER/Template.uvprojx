@@ -655,6 +655,16 @@
               <FileType>5</FileType>
               <FilePath>..\HARDWARE\COLORRECO\colorreco.h</FilePath>
             </File>
+            <File>
+              <FileName>chassis_mecanum.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\CHASSIS\chassis_mecanum.c</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_mecanum.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\HARDWARE\CHASSIS\chassis_mecanum.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

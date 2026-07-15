@@ -33,38 +33,20 @@ int main(void)
 	contral_motor_Init();
 	claw_Init();
 	delay_ms(300);
-	//arrive_most_up(); //到达最高度
+	arrive_most_up(); //到达最高度
+	delay_ms(1000);
+	arrive_most_down();
+	delay_ms(1000);
 	ResetAng_Z(); 
 	// 初始化动作
 
 	
-	arrive_most_up();
+	//arrive_most_up();
 	delay_ms(300);
-	claw_turn3();
+	//claw_turn3();
 	delay_ms(200);
 	claw_open();
 
-			int angle = 90;	
-			stepPosition=0;		
-			MOTOR_Angle(90);
-			while(1)
-			{
-				if(stepPosition == angle_temp)
-				{
-					break;
-				}
-			}	
-
-
-			
-
-            delay_ms(100);
-
-			//陀螺仪微调操作，不清零Z轴陀螺仪，使用基准角度跟随上位机调用的角度变化，微调即为让其转正
-			//是上位机调用Motor_Align()函数来实现
-			//MOTOR_Align();
-
-			MOTOR_Align();
 
 
 	while(1)              //主代码
@@ -85,7 +67,34 @@ int main(void)
 		
 		// delay_ms(1000);
 		OLED_Update();
+		delay_ms(2000);
+		//test();
+		
+		//陀螺仪测试
+//		MOTOR_Angle(90);
+//			while(1)
+//			{
+//				if(stepPosition == angle_temp)
+//				{
+//					break;
+//				}
+//			}	
 
+
+//			if(90>0)base_angle+=90; 
+//			else base_angle-=90;
+
+//			if(base_angle>180)//270
+//			{
+//				base_angle=-90;
+//			}
+//			else if(base_angle<-180)//-270
+//			{
+//				base_angle=90; 
+//			}
+
+//            delay_ms(100);
+//			MOTOR_Align();
 	
 
 		if(Key_Get() == 1)//一键启动，如果按下，给工控机发送启动指令，同时令目标角度和串口屏显示为0
@@ -147,8 +156,24 @@ int main(void)
 
 void test(void) //测试程序
 {
-
-
+//x段小位移测试
+	stepPosition=0;
+	MOTOR_Displacement(0,20);
+	while(1)
+	{
+		if(stepPosition == distance)
+		{
+			break;
+		}
+	}
+//	MOTOR_Displacement(-10,0);
+//	while(1)
+//	{
+//		if(stepPosition == distance)
+//		{
+//			break;
+//		}
+//	}
 
 
 	claw_get_block1();
