@@ -15,37 +15,61 @@ x = 64*mm
 **********************/
 void claw_position(int16_t position)
 {
-	uint32_t pulse=0;
-	claw.position_now = claw.position_now + position; // 更新当前位置
-	
-	if(claw.position_now<0 || claw.position_now>claw_most_up)
-	{
-		claw.position_now=claw.position_now - position;
-	}
-	else
-	{
-		// 方向
-		if(position>0)
-		{
-				Motor1_DIR(1);   // 向上
-		}
-		else
-		{
-				position=-position;
-				Motor1_DIR(0);   // 向下
-		}
-		pulse=(64*position);
-		distance1=pulse;
-		stepPosition1=0;
-		MSD_Move1(pulse,170,170,220); //24 24 30
-		while(1)
-		{
-			if(stepPosition1 == distance1)
-			{
-				break;
-			}
-		}
-	}
+    int16_t target_position;
+    uint32_t pulse;
+    uint32_t i;
+    GPIO_InitTypeDef gpio;
+
+    target_position = claw.position_now + position;
+    if(target_position < 0 || target_position > claw_most_up || position == 0)
+    {
+        return;
+    }
+
+    /* Keep the repository height model, but emit the proven GPIO pulses. */
+    TIM_Cmd(TIM2, DISABLE);
+    TIM2->CCER &= ~(1u << 8);
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA |
+                           RCC_APB2Periph_GPIOB |
+                           RCC_APB2Periph_GPIOC,
+                           ENABLE);
+    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpio.GPIO_Pin = GPIO_Pin_4;
+    GPIO_Init(GPIOA, &gpio);
+    gpio.GPIO_Pin = GPIO_Pin_10;
+    GPIO_Init(GPIOB, &gpio);
+    gpio.GPIO_Pin = GPIO_Pin_5;
+    GPIO_Init(GPIOC, &gpio);
+
+    GPIO_ResetBits(GPIOB, GPIO_Pin_10);
+    if(position > 0)
+    {
+        GPIO_SetBits(GPIOA, GPIO_Pin_4);   /* Up. */
+    }
+    else
+    {
+        position = -position;
+        GPIO_ResetBits(GPIOA, GPIO_Pin_4); /* Down. */
+    }
+
+    pulse = 64u * (uint32_t)position;
+    distance1 = (int)pulse;
+    stepPosition1 = 0;
+    GPIO_ResetBits(GPIOC, GPIO_Pin_5);  /* Enable MOTOR1 (active low). */
+    delay_ms(20u);
+
+    for(i = 0u; i < pulse; i++)
+    {
+        GPIO_SetBits(GPIOB, GPIO_Pin_10);
+        delay_us(1000u);
+        GPIO_ResetBits(GPIOB, GPIO_Pin_10);
+        delay_us(1000u);
+        stepPosition1 = (int)(i + 1u);
+    }
+
+    claw.position_now = target_position;
 }
 /********************
 函数功能 : 爪子位置函数  单位mm

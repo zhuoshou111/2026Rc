@@ -381,9 +381,9 @@
           <GroupName>USER</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>chassis_controller_main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
+              <FilePath>.\chassis_controller_main.c</FilePath>
             </File>
             <File>
               <FileName>stm32f10x_it.c</FileName>
@@ -560,11 +560,6 @@
         <Group>
           <GroupName>README</GroupName>
           <Files>
-            <File>
-              <FileName>README.TXT</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\README.TXT</FilePath>
-            </File>
             <File>
               <FileName>README.md</FileName>
               <FileType>5</FileType>

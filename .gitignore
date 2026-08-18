@@ -1,5 +1,6 @@
 # Keil MDK build outputs
 OBJ/
+USER/Listings/
 *.crf
 *.d
 *.dep
@@ -7,9 +8,14 @@ OBJ/
 *.htm
 *.lnp
 *.build_log.htm
+*_build.log
+*.lst
+*.map
+*.log
 
 # Editor
 *.uvguix.*
+*.uvoptx
 JLinkSettings.ini
 
 # Output files
@@ -21,6 +27,8 @@ JLinkSettings.ini
 # IDE
 .idea/
 .vscode/
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store

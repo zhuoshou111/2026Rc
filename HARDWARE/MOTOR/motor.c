@@ -5,7 +5,7 @@ PC5     ENM
 PB10    step1 
 PA4     dir1 
 TIM2_CH3    PB10   step1  Y
-¶¨Ê±Æ÷2µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR1_Init(void)
 {
@@ -76,7 +76,7 @@ PC5     ENM
 PB11   step2 
 PA5    dir2 
 TIM2_CH4    PB11   step2  Y
-¶¨Ê±Æ÷2µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR2_Init(void)
 {
@@ -146,7 +146,7 @@ PC5     ENM
 PC6    step3 
 PG7    dir3
 TIM3_CH1    PC6    step3  Y
-¶¨Ê±Æ÷3µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR3_Init(void)
 {
@@ -215,7 +215,7 @@ PC5     ENM
 PC7    step4
 PG8    dir4
 TIM3_CH2    PC7    step4  Y
-¶¨Ê±Æ÷3µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR4_Init(void)
 {
@@ -284,7 +284,7 @@ PD7     ENM2
 PB8    step5
 PG13   dir5
 TIM4_CH3    PB8    step5  Y
-¶¨Ê±Æ÷4²»Ó³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½4ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR5_Init(void)
 {
@@ -352,7 +352,7 @@ PD7     ENM2
 PB9    step6
 PE6    dir6
 TIM4_CH4    PB9    step6  Y
-¶¨Ê±Æ÷4²»Ó³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½4ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR6_Init(void)
 {
@@ -420,7 +420,7 @@ PD7     ENM2
 PC8    step7
 PA8    dir7
 TIM3_CH3    PC8    step7
-¶¨Ê±Æ÷3µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR7_Init(void)
 {
@@ -490,7 +490,7 @@ PD7     ENM2
 PC9    step8
 PC1    dir8
 TIM3_CH4    PC9    step8
-¶¨Ê±Æ÷3µÄÍêÈ«ÖØÓ³Éä
+ï¿½ï¿½Ê±ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Ó³ï¿½ï¿½
 *********************/
 void MOTOR8_Init(void)
 {
@@ -555,9 +555,9 @@ void MOTOR8_Init(void)
 	TIM_Cmd(TIM3,ENABLE);
 }
 /************************
-º¯Êý¹¦ÄÜ : ¶¨Ê±Æ÷3µÄÖÐ¶Ïº¯Êý£¨Ð¡³µµ×ÅÌµÄ£©
-ÊäÈë²ÎÊý : ÎÞ
-Êä³ö²ÎÊý £»ÎÞ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½Ê±ï¿½ï¿½3ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ÌµÄ£ï¿½
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 *************************/
 void TIM3_IRQHandler(void)
 {
@@ -568,7 +568,7 @@ void TIM3_IRQHandler(void)
 if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
 {
     TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
-    	TIM3->CCR1=srd.step_delay >> 1;//ÖÜÆÚµÄÒ»°ë
+    TIM3->CCR1=srd.step_delay >> 1;//ï¿½ï¿½ï¿½Úµï¿½Ò»ï¿½ï¿½
 		TIM3->CCR2=srd.step_delay >> 1;
 		TIM3->CCR3=srd.step_delay >> 1;
 		TIM3->CCR4=srd.step_delay >> 1;
@@ -577,11 +577,11 @@ if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
     case STOP:
       step_count = 0;
       rest = 0;
-      TIM3->CCER &= ~(1<<12); //½ûÖ¹Êä³ö
+      TIM3->CCER &= ~((1<<0) | (1<<4) | (1<<8) | (1<<12)); //ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½
       TIM_Cmd(TIM3, DISABLE);
       break;
     case ACCEL:
-      TIM3->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM3->CCER |= (1<<0) | (1<<4) | (1<<8) | (1<<12); //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter(srd.dir);
       step_count++;
       srd.accel_count++;
@@ -600,7 +600,7 @@ if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
       }
       break;
     case RUN:
-      TIM3->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM3->CCER |= (1<<0) | (1<<4) | (1<<8) | (1<<12); //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter(srd.dir);
       step_count++;
       new_step_delay = srd.min_delay;
@@ -611,14 +611,14 @@ if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
       }
       break;
     case DECEL:
-      TIM3->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM3->CCER |= (1<<0) | (1<<4) | (1<<8) | (1<<12); //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter(srd.dir);
       step_count++;
       srd.accel_count++;
       new_step_delay = srd.step_delay - (((2 * (long)srd.step_delay) 
                        + rest)/(4 * srd.accel_count + 1));
       rest = ((2 * (long)srd.step_delay)+rest)%(4 * srd.accel_count + 1);
-      //¼ì²éÊÇ·ñÎª×îºóÒ»²½
+      //ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Îªï¿½ï¿½ï¿½Ò»ï¿½ï¿½
       if(srd.accel_count >= 0){
         srd.run_state = STOP;
       }
@@ -628,9 +628,9 @@ if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
   }
 }
 /************************
-º¯Êý¹¦ÄÜ : ¶¨Ê±Æ÷2µÄÖÐ¶Ïº¯Êý£¨Ð¡³µ×¥È¡µÄ£©£¬ÕâÀïÒª±àÐ´Ë«Í¨µÀ´¦ÀíÂß¼­£¬ÏÖÔÚÖ»ÓÐ×¦×ÓÉÏÉýµÄ£¬Ã»ÓÐ°Ñ×¦×ÓÍùÇ°ÃæÉì³öÈ¥
-ÊäÈë²ÎÊý : ÎÞ
-Êä³ö²ÎÊý £»ÎÞ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½Ê±ï¿½ï¿½2ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½×¥È¡ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ð´Ë«Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½×¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½Ã»ï¿½Ð°ï¿½×¦ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½È¥
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 *************************/
 void TIM2_IRQHandler(void)
 {
@@ -650,11 +650,11 @@ if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
     case STOP:
       step_count = 0;
       rest = 0;
-      TIM2->CCER &= ~(1<<12); //½ûÖ¹Êä³ö
+      TIM2->CCER &= ~(1<<8); //ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½
       TIM_Cmd(TIM2, DISABLE);
       break;
     case ACCEL:
-      TIM2->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM2->CCER |= 1<<8; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter1(srd1.dir);
       step_count++;
       srd1.accel_count++;
@@ -673,7 +673,7 @@ if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
       }
       break;
     case RUN:
-      TIM2->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM2->CCER |= 1<<8; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter1(srd1.dir);
       step_count++;
       new_step_delay = srd1.min_delay;
@@ -684,14 +684,14 @@ if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
       }
       break;
     case DECEL:
-      TIM2->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM2->CCER |= 1<<8; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter1(srd1.dir);
       step_count++;
       srd1.accel_count++;
       new_step_delay = srd1.step_delay - (((2 * (long)srd1.step_delay) 
                        + rest)/(4 * srd1.accel_count + 1));
       rest = ((2 * (long)srd1.step_delay)+rest)%(4 * srd1.accel_count + 1);
-      //¼ì²éÊÇ·ñÎª×îºóÒ»²½
+      //ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Îªï¿½ï¿½ï¿½Ò»ï¿½ï¿½
       if(srd1.accel_count >= 0){
         srd1.run_state = STOP;
       }
@@ -701,9 +701,9 @@ if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
   }
 }
 /************************
-º¯Êý¹¦ÄÜ : ¶¨Ê±Æ÷4µÄÖÐ¶Ïº¯Êý£¨Îï¿éÐý×ªµÄ£©
-ÊäÈë²ÎÊý : ÎÞ
-Êä³ö²ÎÊý £»ÎÞ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½Ê±ï¿½ï¿½4ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Ä£ï¿½
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 *************************/
 void TIM4_IRQHandler(void)
 {
@@ -721,11 +721,11 @@ if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
     case STOP:
       step_count = 0;
       rest = 0;
-      TIM4->CCER &= ~(1<<12); //½ûÖ¹Êä³ö
+      TIM4->CCER &= ~(1<<12); //ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½
       TIM_Cmd(TIM4, DISABLE);
       break;
     case ACCEL:
-      TIM4->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM4->CCER |= 1<<12; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter2(srd2.dir);
       step_count++;
       srd2.accel_count++;
@@ -744,7 +744,7 @@ if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
       }
       break;
     case RUN:
-      TIM4->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM4->CCER |= 1<<12; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter2(srd2.dir);
       step_count++;
       new_step_delay = srd2.min_delay;
@@ -755,14 +755,14 @@ if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
       }
       break;
     case DECEL:
-      TIM4->CCER |= 1<<12; //Ê¹ÄÜÊä³ö
+      TIM4->CCER |= 1<<12; //Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½
       MSD_StepCounter2(srd2.dir);
       step_count++;
       srd2.accel_count++;
       new_step_delay = srd2.step_delay - (((2 * (long)srd2.step_delay) 
                        + rest)/(4 * srd2.accel_count + 1));
       rest = ((2 * (long)srd2.step_delay)+rest)%(4 * srd2.accel_count + 1);
-      //¼ì²éÊÇ·ñÎª×îºóÒ»²½
+      //ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Îªï¿½ï¿½ï¿½Ò»ï¿½ï¿½
       if(srd2.accel_count >= 0){
         srd2.run_state = STOP;
       }

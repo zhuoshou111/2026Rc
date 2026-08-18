@@ -211,6 +211,20 @@ static void SetSysClock(void);
   */
 void SystemInit (void)
 {
+  /*
+   * Earliest possible MOTOR1 startup guard.  Do this before waiting for HSE
+   * and PLL startup so the lift driver cannot see a floating STEP/EN signal.
+   */
+  RCC->APB2ENR |= RCC_APB2ENR_IOPBEN | RCC_APB2ENR_IOPCEN;
+
+  GPIOB->BRR = GPIO_Pin_10;
+  GPIOB->CRH = (GPIOB->CRH & ~((uint32_t)0x0Fu << 8)) |
+               ((uint32_t)0x02u << 8);  /* PB10 STEP low. */
+
+  GPIOC->BSRR = GPIO_Pin_5;
+  GPIOC->CRL = (GPIOC->CRL & ~((uint32_t)0x0Fu << 20)) |
+               ((uint32_t)0x02u << 20); /* PC5 EN high: disabled. */
+
   /* Reset the RCC clock configuration to the default reset state(for debug purpose) */
   /* Set HSION bit */
   RCC->CR |= (uint32_t)0x00000001;
