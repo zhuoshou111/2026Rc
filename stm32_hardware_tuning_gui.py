@@ -93,12 +93,19 @@ except ValueError:
 FRAME_HEAD = 0xFF
 FRAME_TAIL = 0xFE
 PAYLOAD_SIZE = 8
-STATUS_NAMES = {0x00: "命令无效", 0x01: "动作完成", 0x02: "控制器就绪"}
+STATUS_NAMES = {
+    0x00: "命令无效",
+    0x01: "动作完成",
+    0x02: "控制器就绪",
+    0x03: "PE6 启动按键已按下",
+}
 
-DEBUG_MODE_SERVO1 = 80
-DEBUG_MODE_SERVO2 = 81
-DEBUG_MODE_SERVO3 = 82
-DEBUG_MODE_LIFT = 83
+TUNING_MODE_SERVO1 = 80
+TUNING_MODE_SERVO2 = 81
+TUNING_MODE_SERVO3 = 82
+TUNING_MODE_LIFT = 83
+SERVO_TUNING_MIN_PULSE_US = 500
+SERVO_TUNING_MAX_PULSE_US = 2500
 
 
 @dataclass(frozen=True)
@@ -115,48 +122,54 @@ class ParameterSpec:
 
 
 PARAMETERS = (
-    ParameterSpec("SERVO1_RETRACT_PULSE_US", "Servo1 收回", "Servo1 伸缩", "us", 400, 2600, 5, "servo1", "正式收回位置，当前标定约 270°"),
-    ParameterSpec("SERVO1_TASK2_EXTEND_PULSE_US", "Servo1 任务2前伸", "Servo1 伸缩", "us", 400, 2600, 5, "servo1", "奖杯放到讲台前的伸出位置，当前约 60°"),
-    ParameterSpec("SERVO2_BOTTOM_OPEN_PULSE_US", "夹爪地面张开", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "地面抓取和放置时的张开位置"),
-    ParameterSpec("SERVO2_DISC_RELEASE_PULSE_US", "任务1舵盘松开", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "任务1把物块放到舵盘时使用"),
-    ParameterSpec("SERVO2_DISC_PICK_OPEN_PULSE_US", "任务1舵盘抓取前松开", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "任务1从舵盘抓取前使用"),
-    ParameterSpec("SERVO2_TASK2_RELEASE_PULSE_US", "任务2讲台松开", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "任务2从舵盘抓取前和讲台放置时使用"),
-    ParameterSpec("SERVO2_GROUND_RELEASE_STAGE_PULSE_US", "地面分段松开中间位置", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "任务1放到地面时先松到该位置"),
-    ParameterSpec("SERVO2_TASK2_GRUB_RELEASE_PULSE_US", "任务2舵盘松开", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "奖杯从地面放到舵盘时使用"),
-    ParameterSpec("SERVO2_CLAMP_PULSE_US", "夹爪正式夹紧", "Servo2 夹爪", "us", 400, 2600, 5, "servo2", "所有任务的正式抓紧位置"),
-    ParameterSpec("SERVO3_HOME_PULSE_US", "转台回正", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "机械臂正前方基准位置"),
-    ParameterSpec("SERVO3_DISC1_PULSE_US", "舵盘1", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "任务1与任务2共用"),
-    ParameterSpec("SERVO3_DISC2_PULSE_US", "舵盘2", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "任务1使用"),
-    ParameterSpec("SERVO3_DISC3_PULSE_US", "舵盘3", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "任务1与任务2共用"),
-    ParameterSpec("SERVO3_PUT_DISC4_PULSE_US", "舵盘4", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "任务1抓取与放置共用"),
-    ParameterSpec("SERVO3_DISC5_PULSE_US", "舵盘5", "Servo3 底部旋转", "us", 400, 2600, 5, "servo3", "任务1与任务2共用"),
+    ParameterSpec("SERVO1_RETRACT_PULSE_US", "收回位置", "Servo1 伸缩", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo1", "正式收回位置，当前标定约 270°"),
+    ParameterSpec("SERVO1_TASK2_EXTEND_PULSE_US", "任务2前伸位置", "Servo1 伸缩", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo1", "奖杯放到讲台前的伸出位置，当前约 60°"),
+    ParameterSpec("SERVO2_BOTTOM_OPEN_PULSE_US", "地面/领奖台全张开位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "地面抓取、地面放置及任务2领奖台放置完成后使用，当前对应约45°"),
+    ParameterSpec("SERVO2_DISC_RELEASE_PULSE_US", "任务1/2放舵盘位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "任务1和任务2把物块放到舵盘时共用"),
+    ParameterSpec("SERVO2_DISC_PICK_OPEN_PULSE_US", "任务1普通取舵盘位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "任务1从舵盘1/2/4/5抓取前使用"),
+    ParameterSpec("SERVO2_DISC3_PICK_OPEN_PULSE_US", "舵盘3取物张开位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "仅 mode 16 舵盘3搬运到地面时，下降抓取前使用；正式夹紧仍使用统一夹紧位置"),
+    ParameterSpec("SERVO2_TASK2_RELEASE_PULSE_US", "任务2取舵盘前张开位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "仅在任务2下降到舵盘抓取奖杯前使用"),
+    ParameterSpec("SERVO2_GROUND_RELEASE_STAGE_PULSE_US", "地面分段中间位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "任务1放到地面时先松到该位置"),
+    ParameterSpec("SERVO2_CLAMP_PULSE_US", "正式夹紧位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "所有任务的正式抓紧位置"),
+    ParameterSpec("SERVO3_HOME_PULSE_US", "回正位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "机械臂正前方基准位置"),
+    ParameterSpec("SERVO3_DISC1_PULSE_US", "舵盘1位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1与任务2共用"),
+    ParameterSpec("SERVO3_DISC2_PULSE_US", "舵盘2位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1使用"),
+    ParameterSpec("SERVO3_DISC3_PULSE_US", "舵盘3位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1与任务2共用"),
+    ParameterSpec("SERVO3_PUT_DISC4_PULSE_US", "舵盘4位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1抓取与放置共用"),
+    ParameterSpec("SERVO3_DISC5_PULSE_US", "舵盘5位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1与任务2共用"),
     ParameterSpec("LIFT_GROUND_PICK_HEIGHT_MM", "地面抓取高度", "升降高度", "mm", 0, 270, 1, "lift", "从地面夹取物块或奖杯"),
     ParameterSpec("LIFT_GROUND_PLACE_HEIGHT_MM", "地面放置高度", "升降高度", "mm", 0, 270, 1, "lift", "任务1放回地面"),
-    ParameterSpec("LIFT_GROUND_SLOW_APPROACH_DISTANCE_MM", "地面放置慢降距离", "升降高度", "mm", 1, 270, 5, None, "只有向下放到地面时，最后该距离减速"),
-    ParameterSpec("LIFT_PICK_HEIGHT_MM", "待机/动作结束高度", "升降高度", "mm", 0, 270, 1, "lift", "mode 72 和任务结束位置"),
+    ParameterSpec("LIFT_GROUND_SLOW_APPROACH_DISTANCE_MM", "末段缓降距离", "升降高度", "mm", 1, 270, 5, None, "任务1/2放到舵盘、任务1从舵盘抓取和放回地面、任务2放上领奖台时，最后该距离减速"),
+    ParameterSpec("LIFT_PICK_HEIGHT_MM", "待机结束高度", "升降高度", "mm", 0, 270, 1, "lift", "软件初始化和任务结束位置"),
     ParameterSpec("LIFT_PLACE_HEIGHT_MM", "任务1舵盘高度", "升降高度", "mm", 0, 270, 1, "lift", "任务1舵盘抓取和放置"),
     ParameterSpec("LIFT_TRANSFER_HEIGHT_MM", "转台旋转安全高度", "升降高度", "mm", 0, 270, 1, "lift", "任务1转台旋转前的高度"),
-    ParameterSpec("LIFT_MID_HEIGHT_MM", "mode 53 高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调试位置"),
-    ParameterSpec("LIFT_178_HEIGHT_MM", "mode 58 高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调试位置"),
-    ParameterSpec("LIFT_186_HEIGHT_MM", "mode 59 高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调试位置"),
+    ParameterSpec("LIFT_MID_HEIGHT_MM", "中位试动高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调参位置"),
+    ParameterSpec("LIFT_178_HEIGHT_MM", "178mm 试动高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调参位置"),
+    ParameterSpec("LIFT_186_HEIGHT_MM", "186mm 试动高度", "升降高度", "mm", 0, 270, 1, "lift", "独立升降调参位置"),
     ParameterSpec("LIFT_TASK2_DISC_HEIGHT_MM", "任务2舵盘高度", "升降高度", "mm", 0, 270, 1, "lift", "奖杯在舵盘上的抓取/放置高度"),
     ParameterSpec("LIFT_TASK2_RETURN_CLEARANCE_MM", "任务2回正安全高度", "升降高度", "mm", 0, 270, 1, "lift", "任务2取杯后转台回正前高度"),
-    ParameterSpec("LIFT_TASK2_CHAMPION_HEIGHT_MM", "冠军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "mode 33 最终放置高度"),
-    ParameterSpec("LIFT_TASK2_RUNNER_UP_HEIGHT_MM", "亚军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "mode 34 最终放置高度"),
-    ParameterSpec("LIFT_TASK2_THIRD_PLACE_HEIGHT_MM", "季军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "mode 35 最终放置高度"),
-    ParameterSpec("CHASSIS_STEP_HALF_PERIOD_US", "大距离最高速半周期", "速度与延时", "us", 40, 500, 5, None, "加速完成后的巡航速度；数值越小越快"),
-    ParameterSpec("CHASSIS_SHORT_STEP_HALF_PERIOD_US", "0.5m 以下直线半周期", "速度与延时", "us", 40, 1000, 10, None, "mode 1/2 短距离使用的固定速度"),
-    ParameterSpec("CHASSIS_FINE_STEP_HALF_PERIOD_US", "毫米微调半周期", "速度与延时", "us", 40, 1000, 10, None, "mode 5/6 专用固定速度"),
-    ParameterSpec("CHASSIS_RAMP_START_HALF_PERIOD_US", "大距离起步半周期", "速度与延时", "us", 50, 1000, 10, None, "起步/停车速度；数值越大越慢"),
-    ParameterSpec("CHASSIS_RAMP_PULSES", "加速/减速脉冲数", "速度与延时", "pulse", 2, 10000, 50, None, "起步和刹停各使用该脉冲数"),
-    ParameterSpec("CHASSIS_RAMP_MIN_DISTANCE_MM", "启用加减速的最小距离", "速度与延时", "mm", 1, 2000, 10, None, "达到该距离启用缓启动/缓刹车"),
-    ParameterSpec("LIFT_STEP_HALF_PERIOD_US", "升降脉冲半周期", "速度与延时", "us", 15, 500, 5, None, "数值越小，升降越快"),
-    ParameterSpec("LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US", "地面放置慢降半周期", "速度与延时", "us", 15, 1000, 10, None, "仅任务1向下放置的最后一段使用"),
-    ParameterSpec("SERVO1_SETTLE_MS", "Servo1 等待", "速度与延时", "ms", 0, 5000, 50, None, "每次 Servo1 调整后的等待时间"),
-    ParameterSpec("SERVO2_SETTLE_MS", "Servo2 等待", "速度与延时", "ms", 0, 5000, 50, None, "每次夹爪调整后的等待时间"),
-    ParameterSpec("SERVO3_SETTLE_MS", "Servo3 等待", "速度与延时", "ms", 0, 5000, 50, None, "每次转台调整后的等待时间"),
+    ParameterSpec("LIFT_TASK2_CHAMPION_HEIGHT_MM", "冠军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "任务2最终放置高度"),
+    ParameterSpec("LIFT_TASK2_RUNNER_UP_HEIGHT_MM", "亚军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "任务2最终放置高度"),
+    ParameterSpec("LIFT_TASK2_THIRD_PLACE_HEIGHT_MM", "季军讲台高度", "升降高度", "mm", 0, 270, 1, "lift", "任务2最终放置高度"),
+    ParameterSpec("CHASSIS_STEP_HALF_PERIOD_US", "任务1长距/旋转速度", "速度与延时", "us", 40, 500, 5, None, "mode 88 下任务1长距离巡航和普通旋转共用；数值越小越快"),
+    ParameterSpec("CHASSIS_SHORT_STEP_HALF_PERIOD_US", "任务1短距直线速度", "速度与延时", "us", 40, 1000, 10, None, "mode 88 下小于长距阈值的厘米级直线移动；数值越小越快"),
+    ParameterSpec("CHASSIS_RAMP_START_HALF_PERIOD_US", "任务1长距起步停车速度", "速度与延时", "us", 50, 1000, 10, None, "任务1长距离的起步和停车速度；数值越大越慢"),
+    ParameterSpec("CHASSIS_RAMP_PULSES", "任务1长距加减速脉冲数", "速度与延时", "pulse", 2, 10000, 50, None, "任务1长距离起步和刹停各使用该脉冲数"),
+    ParameterSpec("CHASSIS_TASK2_LONG_STEP_HALF_PERIOD_US", "任务2长距巡航速度", "速度与延时", "us", 40, 1000, 10, None, "mode 87 下长距离移动的独立巡航速度；数值越小越快"),
+    ParameterSpec("CHASSIS_SLOW_SHORT_STEP_HALF_PERIOD_US", "任务2短距巡航速度", "速度与延时", "us", 40, 1000, 10, None, "mode 87 下厘米级短距离直线移动的巡航速度；起步和停车都使用加减速曲线"),
+    ParameterSpec("CHASSIS_ROTATE_SLOW_STEP_HALF_PERIOD_US", "任务2旋转/纠偏速度", "速度与延时", "us", 40, 1000, 10, None, "mode 87 下普通旋转和 mode 20 航向纠偏共用；起步和停车都使用加减速曲线"),
+    ParameterSpec("CHASSIS_TASK2_STOP_HALF_PERIOD_US", "任务2起停端速度", "速度与延时", "us", 50, 1500, 10, None, "任务2长距、短距、旋转和纠偏均从该半周期缓加速，并缓减速回该半周期"),
+    ParameterSpec("CHASSIS_TASK2_RAMP_PULSES", "任务2加减速脉冲数", "速度与延时", "pulse", 2, 10000, 50, None, "任务2长距、短距、旋转和纠偏的起步与停车两端共用；短动作会自动缩短"),
+    ParameterSpec("CHASSIS_FINE_STEP_HALF_PERIOD_US", "毫米微调速度", "速度与延时", "us", 40, 1000, 10, None, "毫米级微调专用固定速度；数值越小越快"),
+    ParameterSpec("CHASSIS_RAMP_MIN_DISTANCE_MM", "长距离判定阈值", "速度与延时", "mm", 1, 2000, 10, None, "任务1和任务2达到该距离时使用各自的长距加减速配置"),
+    ParameterSpec("LIFT_STEP_HALF_PERIOD_US", "普通升降速度", "速度与延时", "us", 15, 500, 5, None, "常规升降速度；数值越小，升降越快"),
+    ParameterSpec("LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US", "末段缓降速度", "速度与延时", "us", 15, 1000, 10, None, "任务1/2放到舵盘、任务1从舵盘抓取和放回地面、任务2放上领奖台的最后一段共用；数值越大越慢"),
+    ParameterSpec("SERVO1_SETTLE_MS", "伸缩动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次 Servo1 调整后的等待时间"),
+    ParameterSpec("SERVO2_SETTLE_MS", "夹爪动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次夹爪调整后的等待时间"),
+    ParameterSpec("SERVO3_SETTLE_MS", "转台动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次转台调整后的等待时间"),
+    ParameterSpec("SERVO3_HOME_BEFORE_CLAW_OPEN_MS", "回正后张爪等待", "速度与延时", "ms", 0, 5000, 50, None, "任务1/2从地面抓取并放到舵盘后，转台回正到夹爪张开的专用等待；不影响其他转台动作"),
     ParameterSpec("ARM_ACTION_HOLD_MS", "抓放保持时间", "速度与延时", "ms", 0, 5000, 50, None, "夹紧或松开后的额外保持"),
-    ParameterSpec("GROUND_RELEASE_STAGE_INTERVAL_MS", "地面分段松开间隔", "速度与延时", "ms", 0, 1000, 10, None, "中间松开到完全张开之间的时间"),
+    ParameterSpec("GROUND_RELEASE_STAGE_INTERVAL_MS", "地面分段张开间隔", "速度与延时", "ms", 0, 1000, 10, None, "中间松开到完全张开之间的时间"),
 )
 
 PARAMETER_BY_DEFINE = {item.define: item for item in PARAMETERS}
@@ -178,7 +191,7 @@ TASK_GROUPS = (
     ),
     (
         "任务2：舵盘 → 讲台",
-        (("冠军", 33), ("亚军", 34), ("季军", 35)),
+        (("舵盘1→冠军", 33), ("舵盘3→亚军", 34), ("舵盘5→季军", 35)),
     ),
 )
 
@@ -192,9 +205,12 @@ MANUAL_ACTIONS = (
     ("升到 mode 53 高度", 53, True),
     ("升到 178 mm", 58, True),
     ("升到 186 mm", 59, True),
-    ("升到冠军台 36 mm", 84, True),
-    ("升到亚军台 18 mm", 85, True),
+    ("升到冠军台配置高度", 84, True),
+    ("升到亚军台配置高度", 85, True),
     ("底部旋转舵机回 24°", 86, False),
+    ("启用任务2底盘配置", 87, False),
+    ("恢复任务1底盘配置", 88, False),
+    ("启用 PE6 启动按键", 89, False),
     ("记录陀螺仪基准", 19, False),
     ("底盘航向纠偏", 20, False),
 )
@@ -341,7 +357,7 @@ class SerialWorker:
                         rx_buffer.clear()
                         self._emit("disconnected")
                     elif action == "send":
-                        frame, label, timeout_s, cooldown_s = data  # type: ignore[misc]
+                        frame, label, timeout_s = data  # type: ignore[misc]
                         if port is None:
                             self._emit("serial_error", message=f"请先连接 {SERIAL_PORT}。")
                             self._emit("operation_done")
@@ -358,7 +374,6 @@ class SerialWorker:
                                 "label": label,
                                 "started": now,
                                 "deadline": now + float(timeout_s),
-                                "cooldown": float(cooldown_s),
                             }
                             self._emit("tx", frame=frame, label=label)
                         except Exception as exc:
@@ -429,12 +444,8 @@ class SerialWorker:
                 elapsed = time.monotonic() - float(pending["started"])
             self._emit("rx", frame=frame, status=status, elapsed=elapsed)
             if pending is not None and status in (0x00, 0x01):
-                cooldown = float(pending["cooldown"])
                 pending = None
-                if status == 0x01 and cooldown > 0:
-                    self._emit("cooldown", seconds=cooldown)
-                else:
-                    self._emit("operation_done")
+                self._emit("operation_done")
         return pending
 
 
@@ -455,6 +466,9 @@ class HardwareTuningApp(tk.Tk):
         self.loaded_values: dict[str, int] = {}
         self.value_vars = {spec.define: tk.StringVar() for spec in PARAMETERS}
         self.degree_vars: dict[str, tk.StringVar] = {}
+        self.servo2_manual_var = tk.StringVar(value="")
+        self.servo2_manual_degree_var = tk.StringVar(value="")
+        self.servo2_manual_var.trace_add("write", lambda *_args: self._update_servo2_manual_degree())
         self.action_armed_var = tk.BooleanVar(value=False)
         self.lift_synced_var = tk.BooleanVar(value=False)
         self.turntable_safe_var = tk.BooleanVar(value=False)
@@ -550,6 +564,38 @@ class HardwareTuningApp(tk.Tk):
         ttk.Button(toolbar, text="导出参数方案", command=self._export_profile).pack(side="left", padx=6)
         ttk.Button(toolbar, text="导入参数方案", command=self._import_profile).pack(side="left", padx=6)
         ttk.Label(toolbar, textvariable=self.dirty_var, style="Warn.TLabel").pack(side="right")
+
+        manual = ttk.LabelFrame(parent, text="Servo2 夹爪自由试动（不修改正式任务参数）", padding=8)
+        manual.pack(fill="x", pady=(0, 8))
+        ttk.Label(manual, text="手动脉宽").pack(side="left")
+        ttk.Spinbox(
+            manual,
+            textvariable=self.servo2_manual_var,
+            from_=SERVO_TUNING_MIN_PULSE_US,
+            to=SERVO_TUNING_MAX_PULSE_US,
+            increment=1,
+            width=10,
+        ).pack(side="left", padx=(8, 4))
+        ttk.Label(manual, textvariable=self.servo2_manual_degree_var, width=18).pack(side="left")
+        for delta in (-10, -1, 1, 10):
+            sign = "+" if delta > 0 else ""
+            ttk.Button(
+                manual,
+                text=f"{sign}{delta}",
+                width=5,
+                command=lambda amount=delta: self._nudge_servo2_manual(amount),
+            ).pack(side="left", padx=(3, 0))
+        button = ttk.Button(manual, text="试动夹爪", command=self._test_servo2_manual, width=12)
+        button.pack(side="left", padx=(10, 8))
+        self.action_buttons.append(button)
+        ttk.Label(
+            manual,
+            text=(
+                f"固件允许范围 {SERVO_TUNING_MIN_PULSE_US}–{SERVO_TUNING_MAX_PULSE_US} us；"
+                "输入初值自动读取当前正式夹紧参数，请小步试动"
+            ),
+            style="Safe.TLabel",
+        ).pack(side="left")
 
         host = ttk.Frame(parent)
         host.pack(fill="both", expand=True)
@@ -742,6 +788,7 @@ class HardwareTuningApp(tk.Tk):
         self.loaded_hash = source_hash
         for define, value in values.items():
             self.value_vars[define].set(str(value))
+        self.servo2_manual_var.set(str(values["SERVO2_CLAMP_PULSE_US"]))
         self._update_degree_labels()
         self._update_dirty_state()
         try:
@@ -751,7 +798,7 @@ class HardwareTuningApp(tk.Tk):
             pass
         self._append_log(f"已读取源码参数，SHA-256 {source_hash[:12]}…", "info")
         if show_message:
-            messagebox.showinfo("读取完成", "已从当前 .c 重新载入全部调试参数。")
+            messagebox.showinfo("读取完成", "已从当前 .c 重新载入全部调参参数。")
 
     def _validated_values(self) -> dict[str, int] | None:
         values: dict[str, int] = {}
@@ -773,14 +820,26 @@ class HardwareTuningApp(tk.Tk):
             and values["CHASSIS_RAMP_START_HALF_PERIOD_US"]
             <= values["CHASSIS_STEP_HALF_PERIOD_US"]
         ):
-            errors.append("大距离起步半周期必须大于底盘脉冲半周期")
+            errors.append("任务1长距起步停车半周期必须大于任务1巡航半周期")
+        task2_stop = values.get("CHASSIS_TASK2_STOP_HALF_PERIOD_US")
+        for define, label in (
+            ("CHASSIS_TASK2_LONG_STEP_HALF_PERIOD_US", "任务2长距巡航"),
+            ("CHASSIS_SLOW_SHORT_STEP_HALF_PERIOD_US", "任务2短距巡航"),
+            ("CHASSIS_ROTATE_SLOW_STEP_HALF_PERIOD_US", "任务2旋转/纠偏"),
+        ):
+            if (
+                task2_stop is not None
+                and define in values
+                and task2_stop <= values[define]
+            ):
+                errors.append(f"任务2起停端半周期必须大于{label}半周期")
         if (
             "LIFT_STEP_HALF_PERIOD_US" in values
             and "LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US" in values
             and values["LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US"]
             <= values["LIFT_STEP_HALF_PERIOD_US"]
         ):
-            errors.append("地面放置慢降半周期必须大于普通升降半周期")
+            errors.append("放置末段慢降半周期必须大于普通升降半周期")
         if errors:
             messagebox.showerror("参数错误", "\n".join(errors[:12]))
             return None
@@ -823,6 +882,47 @@ class HardwareTuningApp(tk.Tk):
             value = self.loaded_values.get(spec.define, spec.minimum)
         value = max(spec.minimum, min(spec.maximum, value + delta))
         self.value_vars[spec.define].set(str(value))
+
+    def _update_servo2_manual_degree(self) -> None:
+        try:
+            pulse = int(self.servo2_manual_var.get().strip())
+        except ValueError:
+            self.servo2_manual_degree_var.set("数值无效")
+            return
+        degrees = approximate_degrees("servo2", pulse)
+        self.servo2_manual_degree_var.set(f"us  ≈ {degrees:.1f}°")
+
+    def _nudge_servo2_manual(self, delta: int) -> None:
+        try:
+            value = int(self.servo2_manual_var.get().strip())
+        except ValueError:
+            value = self.loaded_values.get("SERVO2_CLAMP_PULSE_US", SERVO_TUNING_MIN_PULSE_US)
+        value = max(SERVO_TUNING_MIN_PULSE_US, min(SERVO_TUNING_MAX_PULSE_US, value + delta))
+        self.servo2_manual_var.set(str(value))
+
+    def _test_servo2_manual(self) -> None:
+        if not self._safety_check("servo2", needs_lift=False):
+            return
+        try:
+            value = int(self.servo2_manual_var.get().strip())
+        except ValueError:
+            messagebox.showerror("参数错误", "夹爪手动脉宽必须是整数。")
+            return
+        if not SERVO_TUNING_MIN_PULSE_US <= value <= SERVO_TUNING_MAX_PULSE_US:
+            messagebox.showerror(
+                "参数错误",
+                f"夹爪手动试动范围：{SERVO_TUNING_MIN_PULSE_US}–{SERVO_TUNING_MAX_PULSE_US} us",
+            )
+            return
+        frame = make_frame(TUNING_MODE_SERVO2, value)
+        detail = (
+            f"Servo2 夹爪自由试动 → {value} us"
+            f"（约 {approximate_degrees('servo2', value):.1f}°）\n"
+            f"mode {TUNING_MODE_SERVO2}\n{hex_bytes(frame)}"
+        )
+        if not messagebox.askyesno("确认夹爪试动", detail + "\n\n此数值不会写入正式任务参数。确认执行？"):
+            return
+        self._send_frame(frame, f"Servo2 自由试动={value}us", timeout_s=8.0)
 
     def _changes(self, values: dict[str, int]) -> list[tuple[ParameterSpec, int, int]]:
         changes = []
@@ -957,10 +1057,10 @@ class HardwareTuningApp(tk.Tk):
             messagebox.showerror("参数错误", f"允许范围：{spec.minimum}–{spec.maximum} {spec.unit}")
             return
         modes = {
-            "servo1": DEBUG_MODE_SERVO1,
-            "servo2": DEBUG_MODE_SERVO2,
-            "servo3": DEBUG_MODE_SERVO3,
-            "lift": DEBUG_MODE_LIFT,
+            "servo1": TUNING_MODE_SERVO1,
+            "servo2": TUNING_MODE_SERVO2,
+            "servo3": TUNING_MODE_SERVO3,
+            "lift": TUNING_MODE_LIFT,
         }
         mode = modes[spec.actuator]
         frame = make_frame(mode, value)
@@ -974,29 +1074,23 @@ class HardwareTuningApp(tk.Tk):
         if not self._safety_check(actuator, needs_lift=needs_lift):
             return
         frame = make_frame(mode)
-        warning = ""
-        if mode == 72:
-            warning = "\n注意：mode 72 会先返回 ACK，再执行初始化动作；5 秒内不要再发送命令。"
         if not messagebox.askyesno(
             "确认执行机械动作",
-            f"{label}\nmode {mode}\n{hex_bytes(frame)}{warning}\n\n确认执行？",
+            f"{label}\nmode {mode}\n{hex_bytes(frame)}\n\n确认执行？",
         ):
             return
         self._send_frame(
             frame,
             f"{label} (mode {mode})",
             timeout_s=60.0,
-            cooldown_s=5.0 if mode == 72 else 0.0,
         )
 
-    def _send_frame(
-        self, frame: bytes, label: str, timeout_s: float, cooldown_s: float = 0.0
-    ) -> None:
+    def _send_frame(self, frame: bytes, label: str, timeout_s: float) -> None:
         if self.worker is None:
             return
         self.busy = True
         self.status_var.set(f"正在执行：{label}")
-        self.worker.request("send", (frame, label, timeout_s, cooldown_s))
+        self.worker.request("send", (frame, label, timeout_s))
 
     def _start_build(self, export_bin: bool, flash: bool) -> None:
         if self.build_busy or self.busy:
@@ -1169,7 +1263,7 @@ class HardwareTuningApp(tk.Tk):
                     elapsed = event["elapsed"]
                     suffix = "" if elapsed is None else f"，{float(elapsed) * 1000:.1f} ms"
                     name = STATUS_NAMES.get(status, f"状态 0x{status:02X}")
-                    self._append_log(f"RX: {hex_bytes(event['frame'])} ({name}{suffix})", "rx" if status in (1, 2) else "warn")
+                    self._append_log(f"RX: {hex_bytes(event['frame'])} ({name}{suffix})", "rx" if status in (1, 2, 3) else "warn")
                     self.status_var.set(name + suffix)
                 elif kind == "noise":
                     data = event["data"]
@@ -1180,13 +1274,6 @@ class HardwareTuningApp(tk.Tk):
                     self.status_var.set("等待 ACK 超时")
                 elif kind == "operation_done":
                     self.busy = False
-                elif kind == "cooldown":
-                    seconds = float(event["seconds"])
-                    self.status_var.set(f"初始化仍在执行，锁定 {seconds:.0f} 秒")
-                    self._append_log(
-                        f"mode 72 已提前返回 ACK；继续锁定发送 {seconds:.0f} 秒。", "warn"
-                    )
-                    self.after(int(seconds * 1000), self._finish_cooldown)
                 elif kind == "serial_error":
                     self.busy = False
                     self.connect_button.configure(state="normal")
@@ -1229,13 +1316,6 @@ class HardwareTuningApp(tk.Tk):
         self.log.delete("1.0", "end")
         self.log.configure(state="disabled")
 
-    def _finish_cooldown(self) -> None:
-        self.busy = False
-        self.status_var.set(
-            "初始化等待结束，可以继续操作" if self.connected else "串口已断开"
-        )
-        self._append_log("mode 72 安全等待结束。", "info")
-
     def _on_close(self) -> None:
         if self.busy or self.build_busy:
             if not messagebox.askyesno("操作仍在进行", "当前操作尚未结束，仍要关闭界面吗？"):
@@ -1249,8 +1329,11 @@ def self_test(source_path: Path) -> int:
     values, source_hash = parse_source_parameters(source_path)
     assert len(values) == len(PARAMETERS)
     assert read_firmware_version(source_path) >= 130
-    assert make_frame(DEBUG_MODE_SERVO1, 946) == bytes(
+    assert make_frame(TUNING_MODE_SERVO1, 946) == bytes(
         [0xFF, 80, 0x03, 0xB2, 0, 0, 0, 0, 0, 0xFE]
+    )
+    assert make_frame(TUNING_MODE_SERVO2, SERVO_TUNING_MAX_PULSE_US) == bytes(
+        [0xFF, 81, 0x09, 0xC4, 0, 0, 0, 0, 0, 0xFE]
     )
     assert make_frame(72) == bytes([0xFF, 72, 0, 0, 0, 0, 0, 0, 0, 0xFE])
     for spec in PARAMETERS:

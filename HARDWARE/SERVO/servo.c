@@ -7,39 +7,71 @@
 输入参数 : 无
 输出参数 ；无
 *********************************/
-void Servo1_Init(void)
+#define SERVO_TIM5_CH2_INIT_PULSE_US 2500u
+#define SERVO_TIM5_CH3_INIT_PULSE_US  850u
+#define SERVO_TIM5_CH4_INIT_PULSE_US  678u
+
+static void Servo_TIM5_Init(void)
 {
+	static uint8_t servo_tim5_initialized = 0u;
 	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
-	
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5,ENABLE);
-	
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_1;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-	TIM_TimeBaseInitStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-	TIM_TimeBaseInitStructure.TIM_CounterMode=TIM_CounterMode_Up;
-	TIM_TimeBaseInitStructure.TIM_Period=20000-1;
-	TIM_TimeBaseInitStructure.TIM_Prescaler=72-1;
-	TIM_TimeBaseInitStructure.TIM_RepetitionCounter=0;
-	TIM_TimeBaseInit(TIM5,&TIM_TimeBaseInitStructure);
-	
+
+	if (servo_tim5_initialized != 0u)
+	{
+		return;
+	}
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+	TIM_Cmd(TIM5, DISABLE);
+
+	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInitStructure.TIM_Period = 20000u - 1u;
+	TIM_TimeBaseInitStructure.TIM_Prescaler = 72u - 1u;
+	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0u;
+	TIM_TimeBaseInit(TIM5, &TIM_TimeBaseInitStructure);
+
 	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_OCMode=TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OCPolarity=TIM_OCPolarity_High;
-	TIM_OCInitStructure.TIM_OutputState=TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse=0;
-	TIM_OC2Init(TIM5,&TIM_OCInitStructure);
-	
-	TIM_OC2PreloadConfig(TIM5,ENABLE);
-	TIM_ARRPreloadConfig(TIM5,ENABLE);
-	
-	TIM_Cmd(TIM5,ENABLE);
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+
+	TIM_OCInitStructure.TIM_Pulse = SERVO_TIM5_CH2_INIT_PULSE_US;
+	TIM_OC2Init(TIM5, &TIM_OCInitStructure);
+	TIM_OCInitStructure.TIM_Pulse = SERVO_TIM5_CH3_INIT_PULSE_US;
+	TIM_OC3Init(TIM5, &TIM_OCInitStructure);
+	TIM_OCInitStructure.TIM_Pulse = SERVO_TIM5_CH4_INIT_PULSE_US;
+	TIM_OC4Init(TIM5, &TIM_OCInitStructure);
+
+	TIM_OC2PreloadConfig(TIM5, ENABLE);
+	TIM_OC3PreloadConfig(TIM5, ENABLE);
+	TIM_OC4PreloadConfig(TIM5, ENABLE);
+	TIM_ARRPreloadConfig(TIM5, ENABLE);
+
+	/* Program valid pulses before enabling the counter. */
+	TIM_SetCompare2(TIM5, SERVO_TIM5_CH2_INIT_PULSE_US);
+	TIM_SetCompare3(TIM5, SERVO_TIM5_CH3_INIT_PULSE_US);
+	TIM_SetCompare4(TIM5, SERVO_TIM5_CH4_INIT_PULSE_US);
+	TIM_SetCounter(TIM5, 0u);
+	TIM_GenerateEvent(TIM5, TIM_EventSource_Update);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	TIM_Cmd(TIM5, ENABLE);
+	servo_tim5_initialized = 1u;
 }
-//TIM5_CH3    PA2    servo2  
+
+void Servo1_Init(void)
+{
+	Servo_TIM5_Init();
+}
+//TIM5_CH3    PA2    servo2
 /********************************
 函数功能 : 舵机2的初始化
 输入参数 : 无
@@ -47,38 +79,9 @@ void Servo1_Init(void)
 *********************************/
 void Servo2_Init(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	TIM_OCInitTypeDef TIM_OCInitStructure;
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
-	
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5,ENABLE);
-	
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_2;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-	
-	TIM_TimeBaseInitStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-	TIM_TimeBaseInitStructure.TIM_CounterMode=TIM_CounterMode_Up;
-	TIM_TimeBaseInitStructure.TIM_Period=20000-1;
-	TIM_TimeBaseInitStructure.TIM_Prescaler=72-1;
-	TIM_TimeBaseInitStructure.TIM_RepetitionCounter=0;
-	TIM_TimeBaseInit(TIM5,&TIM_TimeBaseInitStructure);
-	
-	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_OCMode=TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OCPolarity=TIM_OCPolarity_High;
-	TIM_OCInitStructure.TIM_OutputState=TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse=0;
-	TIM_OC3Init(TIM5,&TIM_OCInitStructure);
-	
-	TIM_OC3PreloadConfig(TIM5,ENABLE);
-	TIM_ARRPreloadConfig(TIM5,ENABLE);
-	
-	TIM_Cmd(TIM5,ENABLE);
+	Servo_TIM5_Init();
 }
-//TIM5_CH4    PA3    servo3  
+//TIM5_CH4    PA3    servo3
 /********************************
 函数功能 : 舵机3的初始化
 输入参数 : 无
@@ -86,38 +89,9 @@ void Servo2_Init(void)
 *********************************/
 void Servo3_Init(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	TIM_OCInitTypeDef TIM_OCInitStructure;
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
-	
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5,ENABLE);
-	
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_3;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-	
-	TIM_TimeBaseInitStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-	TIM_TimeBaseInitStructure.TIM_CounterMode=TIM_CounterMode_Up;
-	TIM_TimeBaseInitStructure.TIM_Period=20000-1;
-	TIM_TimeBaseInitStructure.TIM_Prescaler=72-1;
-	TIM_TimeBaseInitStructure.TIM_RepetitionCounter=0;
-	TIM_TimeBaseInit(TIM5,&TIM_TimeBaseInitStructure);
-	
-	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_OCMode=TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OCPolarity=TIM_OCPolarity_High;
-	TIM_OCInitStructure.TIM_OutputState=TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse=0;
-	TIM_OC4Init(TIM5,&TIM_OCInitStructure);
-	
-	TIM_OC4PreloadConfig(TIM5,ENABLE);
-	TIM_ARRPreloadConfig(TIM5,ENABLE);
-	
-	TIM_Cmd(TIM5,ENABLE);
+	Servo_TIM5_Init();
 }
-//TIM1_CH4    PA11    servo4  
+//TIM1_CH4    PA11    servo4
 
 /********************************
 函数功能 : 舵机1的初始化

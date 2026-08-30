@@ -62,9 +62,14 @@ class Mode(Enum):
     arm_init = 72
 
     # 任务2颁奖台单独动作
-    raiseToChampion = 84  # 升降到冠军台高度（36mm）
-    raiseToRunnerUp = 85  # 升降到亚军台高度（18mm）
+    raiseToChampion = 84  # 升降到配置的冠军台高度
+    raiseToRunnerUp = 85  # 升降到配置的亚军台高度
     turntableHome = 86    # 底部旋转舵机回到24度
+    chassisTask2Profile = 87     # 启用任务2独立底盘速度和对称加减速
+    chassisSlowSpeed = 87        # 旧名称兼容：等同 chassisTask2Profile
+    chassisTask1Profile = 88     # 恢复任务1底盘速度
+    chassisSpeedRestore = 88     # 旧名称兼容：等同 chassisTask1Profile
+    armStartButton = 89          # 初始化完成后启用PE6启动按键
 
     inform_color = 4       # 通知STM32识别颜色（2026软件层不再调用）
 

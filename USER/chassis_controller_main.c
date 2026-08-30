@@ -16,28 +16,37 @@
  *   7/8/9/10/12: pick from front and place to disc 1/2/3/4/5
  *   14/15/16/17/18: reverse disc 1/2/3/4/5 back to front
  *   33/34/35: task 2, disc 1/3/5 to champion/runner-up/third-place
- *   36: Servo1 debug position, currently 65 degrees
+ *   36: Servo1 task 2 extension position
  *   52: Servo1 retract to 270 degrees
  *   58: lift to 178 mm
  *   59: lift to 186 mm
  *   70: Servo2 claw calibration baseline
  *   80/81/82: hardware-tuning pulse for Servo1/2/3, payload[1:2]
  *   83: hardware-tuning lift height in mm, payload[1:2]
- *   84: lift to task 2 champion podium height (36 mm)
- *   85: lift to task 2 runner-up podium height (18 mm)
+ *   84: lift to the configured task 2 champion podium height
+ *   85: lift to the configured task 2 runner-up podium height
  *   86: Servo3 turntable home (24 degrees)
+ *   87: enable the task 2 chassis profile and acceleration/deceleration ramps
+ *   88: restore the task 1 chassis profile
+ *   89: arm the PE6 start button after startup preparation
  *
  * STM32 -> Raspberry Pi:
  *   FF 02 FE: controller ready
  *   FF 01 FE: command completed
  *   FF 00 FE: unsupported/invalid command
+ *   FF 03 FE: PE6 start button pressed
  */
 
 #define CHASSIS_STEP_HALF_PERIOD_US        70u
 #define CHASSIS_SHORT_STEP_HALF_PERIOD_US 120u
-#define CHASSIS_FINE_STEP_HALF_PERIOD_US  180u
+#define CHASSIS_TASK2_LONG_STEP_HALF_PERIOD_US 120u
+#define CHASSIS_SLOW_SHORT_STEP_HALF_PERIOD_US 160u
+#define CHASSIS_ROTATE_SLOW_STEP_HALF_PERIOD_US 300u
+#define CHASSIS_TASK2_STOP_HALF_PERIOD_US 350u
+#define CHASSIS_TASK2_RAMP_PULSES         700u
+#define CHASSIS_FINE_STEP_HALF_PERIOD_US  350u
 #define CHASSIS_RAMP_START_HALF_PERIOD_US 220u
-#define CHASSIS_RAMP_PULSES               600u
+#define CHASSIS_RAMP_PULSES               700u
 #define CHASSIS_RAMP_MIN_DISTANCE_MM      500u
 #define CHASSIS_DIRECTION_SETTLE_MS        20u
 #define CHASSIS_READY_REPEAT_MS           1000u
@@ -48,28 +57,29 @@
 /* Software-init arm pose: turntable home, lift to 15 cm, claw baseline, retract. */
 #define SERVO1_RETRACT_PULSE_US            2500u  /* 270 degrees. */
 #define SERVO1_TASK2_EXTEND_PULSE_US         946u  /* 60 degrees. */
-#define SERVO2_BOTTOM_OPEN_PULSE_US         850u  /* 45 degrees at home. */
-#define SERVO2_DISC_RELEASE_PULSE_US       1111u  /* 92.5 degrees at disc. */
-#define SERVO2_DISC_PICK_OPEN_PULSE_US     1111u  /* 92.5 degrees before disc pickup. */
-#define SERVO2_TASK2_RELEASE_PULSE_US      1018u  /* 80 degrees. */
+#define SERVO2_BOTTOM_OPEN_PULSE_US         765u  /* 45 degrees at home. */
+#define SERVO2_DISC_RELEASE_PULSE_US       1201u  /* Match the proven disc-pick clearance. */
+#define SERVO2_DISC_PICK_OPEN_PULSE_US     1202u  /* Disc 1/2/4/5 pickup clearance. */
+#define SERVO2_DISC3_PICK_OPEN_PULSE_US    1215u  /* Independent disc 3 pickup clearance. */
+#define SERVO2_TASK2_RELEASE_PULSE_US      1173u  /* 80 degrees. */
 #define SERVO2_GROUND_RELEASE_STAGE_PULSE_US 1018u /* 80 degrees before full ground release. */
-#define SERVO2_TASK2_GRUB_RELEASE_PULSE_US  870u  /* 60 degrees after task2 ground pickup. */
-#define SERVO2_CLAMP_PULSE_US              1166u  /* 100 degrees. */
+#define SERVO2_CLAMP_PULSE_US              1270u  /* 100 degrees. */
 #define SERVO3_HOME_PULSE_US                678u  /* 24 degrees. */
-#define SERVO3_DISC1_PULSE_US              1670u  /* 158 degrees. */
+#define SERVO3_DISC1_PULSE_US              1675u  /* 158 degrees. */
 #define SERVO3_DISC2_PULSE_US              1855u  /* 183 degrees. */
-#define SERVO3_DISC3_PULSE_US              2011u  /* 204 degrees candidate. */
-#define SERVO3_PUT_DISC4_PULSE_US          2174u  /* 226 degrees for task1 grub/put. */
+#define SERVO3_DISC3_PULSE_US              2014u  /* Calibrated disc 3 position. */
+#define SERVO3_PUT_DISC4_PULSE_US          2183u  /* 226 degrees for task1 grub/put. */
 #define SERVO3_DISC5_PULSE_US              2352u  /* 250 degrees for task1/task2. */
 #define SERVO_POWER_ON_SETTLE_MS            500u
 #define SERVO1_SETTLE_MS                    200u
-#define SERVO2_SETTLE_MS                    250u
+#define SERVO2_SETTLE_MS                    380u
 #define SERVO3_SETTLE_MS                    850u
+#define SERVO3_HOME_BEFORE_CLAW_OPEN_MS     500u
 #define ARM_ACTION_HOLD_MS                  200u
 #define GROUND_RELEASE_STAGE_INTERVAL_MS    100u
 
 #define RPI_FRAME_PAYLOAD_SIZE               8u
-#define FIRMWARE_DIAGNOSTIC_VERSION         137u
+#define FIRMWARE_DIAGNOSTIC_VERSION         149u
 
 #define RPI_CMD_X_DISTANCE                    1u
 #define RPI_CMD_Y_DISTANCE                    2u
@@ -103,18 +113,23 @@
 #define RPI_CMD_LIFT_186MM                   59u
 #define RPI_CMD_CLAW_OPEN                    70u
 #define RPI_CMD_SOFTWARE_INIT                72u
-#define RPI_CMD_DEBUG_SERVO1_PULSE           80u
-#define RPI_CMD_DEBUG_SERVO2_PULSE           81u
-#define RPI_CMD_DEBUG_SERVO3_PULSE           82u
-#define RPI_CMD_DEBUG_LIFT_HEIGHT            83u
+#define RPI_CMD_TUNING_SERVO1_PULSE          80u
+#define RPI_CMD_TUNING_SERVO2_PULSE          81u
+#define RPI_CMD_TUNING_SERVO3_PULSE          82u
+#define RPI_CMD_TUNING_LIFT_HEIGHT           83u
 #define RPI_CMD_LIFT_CHAMPION_HEIGHT         84u
 #define RPI_CMD_LIFT_RUNNER_UP_HEIGHT        85u
 #define RPI_CMD_SERVO3_HOME                  86u
+#define RPI_CMD_TASK2_CHASSIS_PROFILE       87u
+#define RPI_CMD_TASK1_CHASSIS_PROFILE       88u
+#define RPI_CMD_ARM_START_BUTTON            89u
 #define RPI_CMD_GYRO_DIAGNOSTIC             126u
 
 #define COMMAND_RESULT_INVALID                0u
 #define COMMAND_RESULT_DONE                   1u
-#define COMMAND_RESULT_ACK_SENT               2u
+
+#define RPI_STATUS_START_BUTTON               3u
+#define START_BUTTON_DEBOUNCE_MS              20u
 
 #define LIFT_MIN_HEIGHT_MM                    0u
 #define LIFT_GROUND_PICK_HEIGHT_MM            10u
@@ -128,17 +143,18 @@
 #define LIFT_186_HEIGHT_MM                  186u
 #define LIFT_TASK2_DISC_HEIGHT_MM           160u
 #define LIFT_TASK2_RETURN_CLEARANCE_MM      200u
-#define LIFT_TASK2_CHAMPION_HEIGHT_MM        36u
-#define LIFT_TASK2_RUNNER_UP_HEIGHT_MM       18u
+#define LIFT_TASK2_CHAMPION_HEIGHT_MM        40u
+#define LIFT_TASK2_RUNNER_UP_HEIGHT_MM       22u
 #define LIFT_TASK2_THIRD_PLACE_HEIGHT_MM     4u
 #define LIFT_PULSES_PER_MM                   64u
 #define LIFT_STEP_HALF_PERIOD_US             15u
+/* Shared by disc pickup/placement, task 1 ground placement and task 2 podium placement. */
 #define LIFT_GROUND_SLOW_APPROACH_DISTANCE_MM 40u
 #define LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US 120u
 #define LIFT_DIRECTION_SETTLE_MS             20u
 
-#define SERVO_DEBUG_MIN_PULSE_US            400u
-#define SERVO_DEBUG_MAX_PULSE_US           2600u
+#define SERVO_TUNING_MIN_PULSE_US           500u
+#define SERVO_TUNING_MAX_PULSE_US          2500u
 
 #define ALIGN_MAX_CORRECTIONS                 3u
 #define ALIGN_MAX_ERROR_DEG                  20.0f
@@ -161,7 +177,7 @@
 #define GYRO_RAW_PROBE_SAMPLES \
     ((GYRO_RAW_PROBE_DURATION_MS * 1000u) / GYRO_RAW_PROBE_SAMPLE_US)
 
-/* Geometry/calibration used by the validated chassis test:
+/* Validated chassis geometry/calibration:
  * wheel diameter 76 mm, 3200 pulses/rev, 7790 pulses/180 degrees. */
 #define CHASSIS_LINEAR_PULSES_NUMERATOR   13403u
 #define CHASSIS_LINEAR_PULSES_DENOM_MM     1000u
@@ -203,6 +219,11 @@ int16_t base_angle = 0;
 int16_t code1 = 0;
 int16_t code2 = 0;
 static uint16_t lift_height_mm = LIFT_MIN_HEIGHT_MM;
+static uint8_t chassis_task2_profile_enabled = 0u;
+static uint8_t start_button_armed = 0u;
+static uint8_t start_button_released = 0u;
+/* Once PE6 startup is armed, reject manual servo tuning commands. */
+static uint8_t servo_tuning_locked = 0u;
 static USART_TypeDef *gyro_active_uart = UART4;
 static float gyro_reference_angle_deg = 0.0f;
 static uint8_t gyro_reference_valid = 0u;
@@ -278,6 +299,11 @@ static void Arm_PWM_Init(void)
     Servo1_Init();
     Servo2_Init();
     Servo3_Init();
+
+    /* Apply the safe competition startup pose after all TIM5 channels exist. */
+    TIM_SetCompare2(TIM5, SERVO1_RETRACT_PULSE_US);
+    TIM_SetCompare3(TIM5, SERVO2_BOTTOM_OPEN_PULSE_US);
+    TIM_SetCompare4(TIM5, SERVO3_HOME_PULSE_US);
 }
 
 static void Arm_SetPowerOnTurntableHome(void)
@@ -364,14 +390,19 @@ static void Lift_MoveToHeight(uint16_t target_height_mm)
                                   LIFT_STEP_HALF_PERIOD_US);
 }
 
-static void Lift_MoveToGroundPlaceHeightSlow(void)
+static void Lift_MoveToPlaceHeightSlow(uint16_t target_height_mm)
 {
-    uint16_t slow_start_height_mm =
-        LIFT_GROUND_PLACE_HEIGHT_MM +
-        LIFT_GROUND_SLOW_APPROACH_DISTANCE_MM;
+    uint16_t slow_start_height_mm;
 
-    if (lift_height_mm <= LIFT_GROUND_PLACE_HEIGHT_MM) {
-        Lift_MoveToHeight(LIFT_GROUND_PLACE_HEIGHT_MM);
+    if (target_height_mm > LIFT_MAX_HEIGHT_MM) {
+        return;
+    }
+
+    slow_start_height_mm =
+        target_height_mm + LIFT_GROUND_SLOW_APPROACH_DISTANCE_MM;
+
+    if (lift_height_mm <= target_height_mm) {
+        Lift_MoveToHeight(target_height_mm);
         return;
     }
 
@@ -381,9 +412,9 @@ static void Lift_MoveToGroundPlaceHeightSlow(void)
     if (lift_height_mm > slow_start_height_mm) {
         Lift_MoveToHeight(slow_start_height_mm);
     }
-    if (lift_height_mm > LIFT_GROUND_PLACE_HEIGHT_MM) {
+    if (lift_height_mm > target_height_mm) {
         Lift_MoveToHeightAtHalfPeriod(
-            LIFT_GROUND_PLACE_HEIGHT_MM,
+            target_height_mm,
             LIFT_GROUND_SLOW_STEP_HALF_PERIOD_US);
     }
 }
@@ -411,6 +442,12 @@ static void Arm_Servo3Move(uint16_t pulse_us)
 {
     TIM_SetCompare4(TIM5, pulse_us);
     delay_ms(SERVO3_SETTLE_MS);
+}
+
+static void Arm_Servo3HomeBeforeClawOpen(void)
+{
+    TIM_SetCompare4(TIM5, SERVO3_HOME_PULSE_US);
+    delay_ms(SERVO3_HOME_BEFORE_CLAW_OPEN_MS);
 }
 
 static uint8_t Arm_DiscPulseFromMode(uint8_t mode, uint16_t *disc_pulse_us)
@@ -453,6 +490,13 @@ static uint8_t Arm_IsPutMode(uint8_t mode)
             mode == RPI_CMD_PUT_DISC3 ||
             mode == RPI_CMD_PUT_DISC4 ||
             mode == RPI_CMD_PUT_DISC5) ? 1u : 0u;
+}
+
+static uint16_t Arm_DiscPickOpenPulseFromMode(uint8_t mode)
+{
+    return (mode == RPI_CMD_PUT_DISC3) ?
+           SERVO2_DISC3_PICK_OPEN_PULSE_US :
+           SERVO2_DISC_PICK_OPEN_PULSE_US;
 }
 
 static uint8_t Arm_Task2ParamsFromMode(uint8_t mode,
@@ -517,8 +561,8 @@ static void Arm_RunTask2Place(uint16_t disc_pulse_us,
     Arm_Servo1Move(SERVO1_TASK2_EXTEND_PULSE_US);
     Arm_Servo3Move(SERVO3_HOME_PULSE_US);
 
-    Lift_MoveToHeight(podium_height_mm);
-    Arm_Servo2Move(SERVO2_TASK2_RELEASE_PULSE_US);
+    Lift_MoveToPlaceHeightSlow(podium_height_mm);
+    Arm_Servo2Move(SERVO2_BOTTOM_OPEN_PULSE_US);
     delay_ms(ARM_ACTION_HOLD_MS);
 
     Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
@@ -538,30 +582,31 @@ static void Arm_RunGrubToDisc(uint16_t disc_pulse_us,
 
     Arm_Servo3Move(disc_pulse_us);
 
-    Lift_MoveToHeight(LIFT_PLACE_HEIGHT_MM);
+    Lift_MoveToPlaceHeightSlow(LIFT_PLACE_HEIGHT_MM);
     Arm_Servo2Move(disc_release_pulse_us);
     delay_ms(ARM_ACTION_HOLD_MS);
 
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    Arm_Servo3Move(SERVO3_HOME_PULSE_US);
+    Arm_Servo3HomeBeforeClawOpen();
     Arm_Servo2Move(SERVO2_BOTTOM_OPEN_PULSE_US);
     Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
 }
 
-static void Arm_RunPutFromDisc(uint16_t disc_pulse_us)
+static void Arm_RunPutFromDisc(uint16_t disc_pulse_us,
+                               uint16_t disc_pick_open_pulse_us)
 {
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
     Arm_Servo3Move(disc_pulse_us);
-    Arm_Servo2Move(SERVO2_DISC_PICK_OPEN_PULSE_US);
+    Arm_Servo2Move(disc_pick_open_pulse_us);
 
-    Lift_MoveToHeight(LIFT_PLACE_HEIGHT_MM);
+    Lift_MoveToPlaceHeightSlow(LIFT_PLACE_HEIGHT_MM);
     Arm_Servo2Move(SERVO2_CLAMP_PULSE_US);
     delay_ms(ARM_ACTION_HOLD_MS);
 
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
     Arm_Servo3Move(SERVO3_HOME_PULSE_US);
 
-    Lift_MoveToGroundPlaceHeightSlow();
+    Lift_MoveToPlaceHeightSlow(LIFT_GROUND_PLACE_HEIGHT_MM);
     TIM_SetCompare3(TIM5, SERVO2_GROUND_RELEASE_STAGE_PULSE_US);
     delay_ms(GROUND_RELEASE_STAGE_INTERVAL_MS);
     TIM_SetCompare3(TIM5, SERVO2_BOTTOM_OPEN_PULSE_US);
@@ -610,6 +655,42 @@ static void Chassis_SendStatus(uint8_t status)
     Chassis_UART1_SendByte(0xFFu);
     Chassis_UART1_SendByte(status);
     Chassis_UART1_SendByte(0xFEu);
+}
+
+static void StartButton_Arm(void)
+{
+    start_button_armed = 1u;
+    start_button_released =
+        (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6) == Bit_RESET) ? 1u : 0u;
+    servo_tuning_locked = 1u;
+}
+
+static uint8_t StartButton_TryConsumePress(void)
+{
+    if (start_button_armed == 0u) {
+        return 0u;
+    }
+
+    if (start_button_released == 0u) {
+        if (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6) == Bit_RESET) {
+            delay_ms(START_BUTTON_DEBOUNCE_MS);
+            if (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6) == Bit_RESET) {
+                start_button_released = 1u;
+            }
+        }
+        return 0u;
+    }
+
+    if (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6) != Bit_RESET) {
+        delay_ms(START_BUTTON_DEBOUNCE_MS);
+        if (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_6) != Bit_RESET) {
+            start_button_armed = 0u;
+            start_button_released = 0u;
+            return 1u;
+        }
+    }
+
+    return 0u;
 }
 
 static uint8_t Chassis_TrySendReadyByte(uint8_t *index)
@@ -769,14 +850,29 @@ static void Chassis_PulseAtHalfPeriod(uint32_t pulses,
     }
 }
 
+static void Chassis_PulseWithRamp(uint32_t pulses,
+                                  uint32_t cruise_half_period_us,
+                                  uint32_t start_stop_half_period_us,
+                                  uint32_t ramp_pulses);
+
 static void Chassis_Pulse(uint32_t pulses)
 {
-    Chassis_PulseAtHalfPeriod(pulses, CHASSIS_STEP_HALF_PERIOD_US);
+    if (chassis_task2_profile_enabled != 0u) {
+        Chassis_PulseWithRamp(
+            pulses,
+            CHASSIS_ROTATE_SLOW_STEP_HALF_PERIOD_US,
+            CHASSIS_TASK2_STOP_HALF_PERIOD_US,
+            CHASSIS_TASK2_RAMP_PULSES);
+    } else {
+        Chassis_PulseAtHalfPeriod(pulses, CHASSIS_STEP_HALF_PERIOD_US);
+    }
 }
 
-static void Chassis_PulseWithRamp(uint32_t pulses)
+static void Chassis_PulseWithRamp(uint32_t pulses,
+                                  uint32_t cruise_half_period_us,
+                                  uint32_t start_stop_half_period_us,
+                                  uint32_t ramp_pulses)
 {
-    uint32_t ramp_pulses = CHASSIS_RAMP_PULSES;
     uint32_t ramp_span;
     uint32_t period_delta;
     uint32_t ramp_position;
@@ -785,8 +881,8 @@ static void Chassis_PulseWithRamp(uint32_t pulses)
 
     if (pulses < 4u ||
         ramp_pulses < 2u ||
-        CHASSIS_RAMP_START_HALF_PERIOD_US <= CHASSIS_STEP_HALF_PERIOD_US) {
-        Chassis_Pulse(pulses);
+        start_stop_half_period_us <= cruise_half_period_us) {
+        Chassis_PulseAtHalfPeriod(pulses, cruise_half_period_us);
         return;
     }
 
@@ -794,20 +890,19 @@ static void Chassis_PulseWithRamp(uint32_t pulses)
         ramp_pulses = pulses / 2u;
     }
     ramp_span = ramp_pulses - 1u;
-    period_delta = CHASSIS_RAMP_START_HALF_PERIOD_US -
-                   CHASSIS_STEP_HALF_PERIOD_US;
+    period_delta = start_stop_half_period_us - cruise_half_period_us;
 
     for (pulse = 0u; pulse < pulses; pulse++) {
         if (pulse < ramp_pulses) {
             ramp_position = pulse;
-            half_period_us = CHASSIS_RAMP_START_HALF_PERIOD_US -
+            half_period_us = start_stop_half_period_us -
                              ((period_delta * ramp_position) / ramp_span);
         } else if (pulse >= (pulses - ramp_pulses)) {
             ramp_position = pulses - pulse - 1u;
-            half_period_us = CHASSIS_RAMP_START_HALF_PERIOD_US -
+            half_period_us = start_stop_half_period_us -
                              ((period_delta * ramp_position) / ramp_span);
         } else {
-            half_period_us = CHASSIS_STEP_HALF_PERIOD_US;
+            half_period_us = cruise_half_period_us;
         }
 
         GPIO_SetBits(GPIOC, CHASSIS_STEP_PINS);
@@ -843,10 +938,28 @@ static void Chassis_Move(ChassisVector vector,
     if (amount_is_degrees != 0u) {
         Chassis_Pulse(pulses);
     } else if (linear_distance_mm >= CHASSIS_RAMP_MIN_DISTANCE_MM) {
-        Chassis_PulseWithRamp(pulses);
+        if (chassis_task2_profile_enabled != 0u) {
+            Chassis_PulseWithRamp(
+                pulses,
+                CHASSIS_TASK2_LONG_STEP_HALF_PERIOD_US,
+                CHASSIS_TASK2_STOP_HALF_PERIOD_US,
+                CHASSIS_TASK2_RAMP_PULSES);
+        } else {
+            Chassis_PulseWithRamp(
+                pulses,
+                CHASSIS_STEP_HALF_PERIOD_US,
+                CHASSIS_RAMP_START_HALF_PERIOD_US,
+                CHASSIS_RAMP_PULSES);
+        }
     } else if (linear_unit_mm == 1u) {
         Chassis_PulseAtHalfPeriod(pulses,
                                   CHASSIS_FINE_STEP_HALF_PERIOD_US);
+    } else if (chassis_task2_profile_enabled != 0u) {
+        Chassis_PulseWithRamp(
+            pulses,
+            CHASSIS_SLOW_SHORT_STEP_HALF_PERIOD_US,
+            CHASSIS_TASK2_STOP_HALF_PERIOD_US,
+            CHASSIS_TASK2_RAMP_PULSES);
     } else {
         Chassis_PulseAtHalfPeriod(pulses,
                                   CHASSIS_SHORT_STEP_HALF_PERIOD_US);
@@ -1361,7 +1474,14 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
 {
     uint16_t disc_pulse_us;
     uint16_t podium_height_mm;
-    uint16_t debug_value;
+    uint16_t tuning_value;
+
+    if (servo_tuning_locked != 0u &&
+        (payload[0] == RPI_CMD_TUNING_SERVO1_PULSE ||
+         payload[0] == RPI_CMD_TUNING_SERVO2_PULSE ||
+         payload[0] == RPI_CMD_TUNING_SERVO3_PULSE)) {
+        return COMMAND_RESULT_INVALID;
+    }
 
     switch (payload[0]) {
     case RPI_CMD_X_DISTANCE:
@@ -1417,7 +1537,9 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
             return 0u;
         }
         if (Arm_IsPutMode(payload[0]) != 0u) {
-            Arm_RunPutFromDisc(disc_pulse_us);
+            Arm_RunPutFromDisc(
+                disc_pulse_us,
+                Arm_DiscPickOpenPulseFromMode(payload[0]));
         } else {
             Arm_RunGrubToDisc(disc_pulse_us,
                               SERVO2_DISC_RELEASE_PULSE_US);
@@ -1443,7 +1565,7 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
             return 0u;
         }
         Arm_RunGrubToDisc(disc_pulse_us,
-                          SERVO2_TASK2_GRUB_RELEASE_PULSE_US);
+                          SERVO2_DISC_RELEASE_PULSE_US);
         return 1u;
 
     case RPI_CMD_RESET_ANGLE:
@@ -1492,43 +1614,42 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
         return 1u;
 
     case RPI_CMD_SOFTWARE_INIT:
-        Chassis_SendStatus(0x01u);
         Arm_RunSoftwareInit();
-        return COMMAND_RESULT_ACK_SENT;
-
-    case RPI_CMD_DEBUG_SERVO1_PULSE:
-        debug_value = Chassis_ReadUInt16(payload[1], payload[2]);
-        if (debug_value < SERVO_DEBUG_MIN_PULSE_US ||
-            debug_value > SERVO_DEBUG_MAX_PULSE_US) {
-            return COMMAND_RESULT_INVALID;
-        }
-        Arm_Servo1Move(debug_value);
         return COMMAND_RESULT_DONE;
 
-    case RPI_CMD_DEBUG_SERVO2_PULSE:
-        debug_value = Chassis_ReadUInt16(payload[1], payload[2]);
-        if (debug_value < SERVO_DEBUG_MIN_PULSE_US ||
-            debug_value > SERVO_DEBUG_MAX_PULSE_US) {
+    case RPI_CMD_TUNING_SERVO1_PULSE:
+        tuning_value = Chassis_ReadUInt16(payload[1], payload[2]);
+        if (tuning_value < SERVO_TUNING_MIN_PULSE_US ||
+            tuning_value > SERVO_TUNING_MAX_PULSE_US) {
             return COMMAND_RESULT_INVALID;
         }
-        Arm_Servo2Move(debug_value);
+        Arm_Servo1Move(tuning_value);
         return COMMAND_RESULT_DONE;
 
-    case RPI_CMD_DEBUG_SERVO3_PULSE:
-        debug_value = Chassis_ReadUInt16(payload[1], payload[2]);
-        if (debug_value < SERVO_DEBUG_MIN_PULSE_US ||
-            debug_value > SERVO_DEBUG_MAX_PULSE_US) {
+    case RPI_CMD_TUNING_SERVO2_PULSE:
+        tuning_value = Chassis_ReadUInt16(payload[1], payload[2]);
+        if (tuning_value < SERVO_TUNING_MIN_PULSE_US ||
+            tuning_value > SERVO_TUNING_MAX_PULSE_US) {
             return COMMAND_RESULT_INVALID;
         }
-        Arm_Servo3Move(debug_value);
+        Arm_Servo2Move(tuning_value);
         return COMMAND_RESULT_DONE;
 
-    case RPI_CMD_DEBUG_LIFT_HEIGHT:
-        debug_value = Chassis_ReadUInt16(payload[1], payload[2]);
-        if (debug_value > LIFT_MAX_HEIGHT_MM) {
+    case RPI_CMD_TUNING_SERVO3_PULSE:
+        tuning_value = Chassis_ReadUInt16(payload[1], payload[2]);
+        if (tuning_value < SERVO_TUNING_MIN_PULSE_US ||
+            tuning_value > SERVO_TUNING_MAX_PULSE_US) {
             return COMMAND_RESULT_INVALID;
         }
-        Lift_MoveToHeight(debug_value);
+        Arm_Servo3Move(tuning_value);
+        return COMMAND_RESULT_DONE;
+
+    case RPI_CMD_TUNING_LIFT_HEIGHT:
+        tuning_value = Chassis_ReadUInt16(payload[1], payload[2]);
+        if (tuning_value > LIFT_MAX_HEIGHT_MM) {
+            return COMMAND_RESULT_INVALID;
+        }
+        Lift_MoveToHeight(tuning_value);
         return COMMAND_RESULT_DONE;
 
     case RPI_CMD_LIFT_CHAMPION_HEIGHT:
@@ -1541,6 +1662,18 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
 
     case RPI_CMD_SERVO3_HOME:
         Arm_Servo3Move(SERVO3_HOME_PULSE_US);
+        return COMMAND_RESULT_DONE;
+
+    case RPI_CMD_TASK2_CHASSIS_PROFILE:
+        chassis_task2_profile_enabled = 1u;
+        return COMMAND_RESULT_DONE;
+
+    case RPI_CMD_TASK1_CHASSIS_PROFILE:
+        chassis_task2_profile_enabled = 0u;
+        return COMMAND_RESULT_DONE;
+
+    case RPI_CMD_ARM_START_BUTTON:
+        StartButton_Arm();
         return COMMAND_RESULT_DONE;
 
     case RPI_CMD_GYRO_DIAGNOSTIC:
@@ -1561,11 +1694,13 @@ int main(void)
     uint8_t ready_tx_index = 0u;
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-    (void)Gyro_InitializeRuntime();
+    /* Drive all servo signals safely before the gyro startup delays. */
     Arm_PWM_Init();
+    (void)Gyro_InitializeRuntime();
     Lift_GPIO_Init();
     Chassis_UART1_Init();
     Chassis_GPIO_Init();
+    KEY_Init();
 
     for (;;) {
         if (Chassis_TryReadFrame(payload) != 0u) {
@@ -1582,7 +1717,9 @@ int main(void)
             }
         } else {
             delay_us(UART_RX_POLL_INTERVAL_US);
-            if (host_connected == 0u) {
+            if (StartButton_TryConsumePress() != 0u) {
+                Chassis_SendStatus(RPI_STATUS_START_BUTTON);
+            } else if (host_connected == 0u) {
                 if (ready_pending != 0u) {
                     if (Chassis_TrySendReadyByte(&ready_tx_index) != 0u) {
                         ready_pending = 0u;

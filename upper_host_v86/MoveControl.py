@@ -6,7 +6,7 @@ from loguru import logger
 
 # 输入一个[-128,127]范围内的整数，取它补码的十进制
 def get_int8(num):
-    assert -128 <= num <= 127, print("int8绫诲瀷鑼冨洿涓篬-128, 127]")
+    assert -128 <= num <= 127, print("int8类型范围为[-128, 127]")
     if num >= 0:
         return int(num)
     else:
@@ -124,7 +124,10 @@ class MoveControl(object):
 
         elif mode in (Mode.raiseToChampion,
                        Mode.raiseToRunnerUp,
-                       Mode.turntableHome):
+                       Mode.turntableHome,
+                       Mode.chassisTask2Profile,
+                       Mode.chassisTask1Profile,
+                       Mode.armStartButton):
             self.send_buffer[1] = mode.value
 
         elif mode == Mode.motor_align:
@@ -210,19 +213,43 @@ class MoveControl(object):
         else:
             pass
     
-    # 程序启动后，需要等待下位机启动指令  [0xFF, 0x02, 0xFE]
-    def wait_for_start_cmd(self):
+    def __wait_for_status(self, expected_status, label, timeout=None):
+        original_timeout = self.serial.timeout
+        self.serial.timeout = 0.1
+        deadline = None if timeout is None else time.monotonic() + timeout
+        rx_buffer = bytearray()
+        try:
+            while deadline is None or time.monotonic() < deadline:
+                chunk = self.serial.read(max(1, self.serial.in_waiting))
+                if not chunk:
+                    continue
+                rx_buffer.extend(chunk)
+                while len(rx_buffer) >= 3:
+                    try:
+                        header_index = rx_buffer.index(0xFF)
+                    except ValueError:
+                        rx_buffer.clear()
+                        break
+                    if header_index:
+                        del rx_buffer[:header_index]
+                    if len(rx_buffer) < 3:
+                        break
+                    if rx_buffer[2] != 0xFE:
+                        del rx_buffer[0]
+                        continue
+                    status = rx_buffer[1]
+                    del rx_buffer[:3]
+                    if status == expected_status:
+                        logger.success(label)
+                        return True
+            raise TimeoutError(label + "超时")
+        finally:
+            self.serial.timeout = original_timeout
+
+    # 程序启动后，等待下位机就绪帧 [0xFF, 0x02, 0xFE]
+    def wait_for_start_cmd(self, timeout=None):
         logger.info("等待下位机启动指令")
-        while True:
-            header_raw = self.serial.read(1)
-            if not header_raw:
-                continue
-            header = header_raw[0]
-            if header == self.send_buffer[0]:
-                status_raw = self.serial.read(1)
-                if status_raw and status_raw[0] == 0x02:
-                    logger.info("接收到下位机启动指令")
-                    return True
+        return self.__wait_for_status(0x02, "接收到下位机启动指令", timeout)
  
     # x,y距离微调函数 x,y单位为mm
     def move_in_mm(self, x=0, y=0):
@@ -357,11 +384,43 @@ class MoveControl(object):
     def turntable_home(self):
         self.__send_serial_msg(mode=Mode.turntableHome)
 
+    def enable_task2_chassis_profile(self):
+        """Enable task 2 speeds and symmetric acceleration/deceleration."""
+        self.__send_serial_msg(mode=Mode.chassisTask2Profile)
+
+    def enable_chassis_slow_speed(self):
+        """Compatibility alias for enable_task2_chassis_profile()."""
+        return self.enable_task2_chassis_profile()
+
+    def restore_task1_chassis_profile(self):
+        """Restore the task 1 chassis speeds and movement behavior."""
+        self.__send_serial_msg(mode=Mode.chassisTask1Profile)
+
+    def restore_chassis_speeds(self):
+        """Compatibility alias for restore_task1_chassis_profile()."""
+        return self.restore_task1_chassis_profile()
+
+    def arm_start_button(self):
+        """Enable the next valid PE6 press as the task start event."""
+        self.__send_serial_msg(mode=Mode.armStartButton)
+
+    def wait_for_start_button(self, timeout=None):
+        """Wait until STM32 reports a debounced PE6 press."""
+        logger.info("等待按下 PE6 启动按键")
+        return self.__wait_for_status(0x03, "PE6 已按下，开始执行任务", timeout)
+
+    def initialize_and_wait_for_start(self, timeout=None):
+        """Prepare the robot at power-on, then wait for the PE6 start button."""
+        self.wait_for_start_cmd(timeout=timeout)
+        self.arm_init()
+        self.reset_angle()
+        self.arm_start_button()
+        return self.wait_for_start_button(timeout=timeout)
+
     # 爪子旋转函数
     def grubTurnAround_front(self):
         self.__send_serial_msg(mode=Mode.grubTurnAround)
     
-    ## DEBUG/7/17:爪子位置异常外伸
     def grubTurnAround_behind(self):
         self.__send_serial_msg(mode=Mode.grubTurnAround_2)
 
