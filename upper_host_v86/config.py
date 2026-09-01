@@ -13,6 +13,8 @@ class Mode(Enum):
     grub_3 = 9
     grub_4 = 10
     grub_5 = 12
+    grub_cuboid_2 = 21  # 从地面抓取长方体（预闭合+转台摇摆）放到舵盘2
+    grub_cuboid_4 = 22  # 从地面抓取长方体（预闭合+转台摇摆）放到舵盘4
     put_1 = 14
     put_2 = 15
     put_3 = 16

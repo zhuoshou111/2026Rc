@@ -131,7 +131,10 @@ PARAMETERS = (
     ParameterSpec("SERVO2_TASK2_RELEASE_PULSE_US", "任务2取舵盘前张开位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "仅在任务2下降到舵盘抓取奖杯前使用"),
     ParameterSpec("SERVO2_GROUND_RELEASE_STAGE_PULSE_US", "地面分段中间位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "任务1放到地面时先松到该位置"),
     ParameterSpec("SERVO2_CLAMP_PULSE_US", "正式夹紧位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "所有任务的正式抓紧位置"),
+    ParameterSpec("SERVO2_CUBOID_PRE_CLOSE_PULSE_US", "长方体预闭合位置", "Servo2 夹爪", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo2", "mode 21/22 抓取长方体时，转台摇摆前先预闭合到的位置"),
     ParameterSpec("SERVO3_HOME_PULSE_US", "回正位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "机械臂正前方基准位置"),
+    ParameterSpec("SERVO3_CUBOID_WIGGLE_LOW_PULSE_US", "长方体摇摆低位(0°)", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "mode 21/22 摇摆第一下：24°→0°"),
+    ParameterSpec("SERVO3_CUBOID_WIGGLE_HIGH_PULSE_US", "长方体摇摆高位(48°)", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "mode 21/22 摇摆第二下：24°→48°"),
     ParameterSpec("SERVO3_DISC1_PULSE_US", "舵盘1位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1与任务2共用"),
     ParameterSpec("SERVO3_DISC2_PULSE_US", "舵盘2位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1使用"),
     ParameterSpec("SERVO3_DISC3_PULSE_US", "舵盘3位置", "Servo3 底部旋转", "us", SERVO_TUNING_MIN_PULSE_US, SERVO_TUNING_MAX_PULSE_US, 5, "servo3", "任务1与任务2共用"),
@@ -167,13 +170,180 @@ PARAMETERS = (
     ParameterSpec("SERVO1_SETTLE_MS", "伸缩动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次 Servo1 调整后的等待时间"),
     ParameterSpec("SERVO2_SETTLE_MS", "夹爪动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次夹爪调整后的等待时间"),
     ParameterSpec("SERVO3_SETTLE_MS", "转台动作等待", "速度与延时", "ms", 0, 5000, 50, None, "每次转台调整后的等待时间"),
+    ParameterSpec("SERVO3_CUBOID_WIGGLE_STEP_MS", "摇摆步进等待", "长方体：地面→舵盘 时序", "ms", 0, 5000, 10, None, "mode 21/22 摇摆中每一步的等待时间"),
     ParameterSpec("SERVO3_HOME_BEFORE_CLAW_OPEN_MS", "回正后张爪等待", "速度与延时", "ms", 0, 5000, 50, None, "任务1/2从地面抓取并放到舵盘后，转台回正到夹爪张开的专用等待；不影响其他转台动作"),
     ParameterSpec("ARM_ACTION_HOLD_MS", "抓放保持时间", "速度与延时", "ms", 0, 5000, 50, None, "夹紧或松开后的额外保持"),
     ParameterSpec("GROUND_RELEASE_STAGE_INTERVAL_MS", "地面分段张开间隔", "速度与延时", "ms", 0, 1000, 10, None, "中间松开到完全张开之间的时间"),
+    ParameterSpec("GRUB1_OPEN_WAIT_MS", "抓取1 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("GRUB1_CLAMP_WAIT_MS", "抓取1 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("GRUB1_CLAMP_HOLD_MS", "抓取1 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("GRUB1_TURNTABLE_WAIT_MS", "抓取1 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("GRUB1_RELEASE_WAIT_MS", "抓取1 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("GRUB1_RELEASE_HOLD_MS", "抓取1 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("GRUB1_HOME_WAIT_MS", "抓取1 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("GRUB1_OPEN_AFTER_HOME_WAIT_MS", "抓取1 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("GRUB2_OPEN_WAIT_MS", "抓取2 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("GRUB2_CLAMP_WAIT_MS", "抓取2 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("GRUB2_CLAMP_HOLD_MS", "抓取2 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("GRUB2_TURNTABLE_WAIT_MS", "抓取2 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("GRUB2_RELEASE_WAIT_MS", "抓取2 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("GRUB2_RELEASE_HOLD_MS", "抓取2 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("GRUB2_HOME_WAIT_MS", "抓取2 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("GRUB2_OPEN_AFTER_HOME_WAIT_MS", "抓取2 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("GRUB3_OPEN_WAIT_MS", "抓取3 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("GRUB3_CLAMP_WAIT_MS", "抓取3 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("GRUB3_CLAMP_HOLD_MS", "抓取3 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("GRUB3_TURNTABLE_WAIT_MS", "抓取3 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("GRUB3_RELEASE_WAIT_MS", "抓取3 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("GRUB3_RELEASE_HOLD_MS", "抓取3 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("GRUB3_HOME_WAIT_MS", "抓取3 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("GRUB3_OPEN_AFTER_HOME_WAIT_MS", "抓取3 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("GRUB4_OPEN_WAIT_MS", "抓取4 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("GRUB4_CLAMP_WAIT_MS", "抓取4 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("GRUB4_CLAMP_HOLD_MS", "抓取4 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("GRUB4_TURNTABLE_WAIT_MS", "抓取4 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("GRUB4_RELEASE_WAIT_MS", "抓取4 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("GRUB4_RELEASE_HOLD_MS", "抓取4 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("GRUB4_HOME_WAIT_MS", "抓取4 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("GRUB4_OPEN_AFTER_HOME_WAIT_MS", "抓取4 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("GRUB5_OPEN_WAIT_MS", "抓取5 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("GRUB5_CLAMP_WAIT_MS", "抓取5 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("GRUB5_CLAMP_HOLD_MS", "抓取5 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("GRUB5_TURNTABLE_WAIT_MS", "抓取5 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("GRUB5_RELEASE_WAIT_MS", "抓取5 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("GRUB5_RELEASE_HOLD_MS", "抓取5 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("GRUB5_HOME_WAIT_MS", "抓取5 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("GRUB5_OPEN_AFTER_HOME_WAIT_MS", "抓取5 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("TASK2_GRUB1_OPEN_WAIT_MS", "任务2抓取1 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("TASK2_GRUB1_CLAMP_WAIT_MS", "任务2抓取1 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("TASK2_GRUB1_CLAMP_HOLD_MS", "任务2抓取1 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("TASK2_GRUB1_TURNTABLE_WAIT_MS", "任务2抓取1 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("TASK2_GRUB1_RELEASE_WAIT_MS", "任务2抓取1 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("TASK2_GRUB1_RELEASE_HOLD_MS", "任务2抓取1 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("TASK2_GRUB1_HOME_WAIT_MS", "任务2抓取1 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_GRUB1_OPEN_AFTER_HOME_WAIT_MS", "任务2抓取1 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("TASK2_GRUB3_OPEN_WAIT_MS", "任务2抓取2 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("TASK2_GRUB3_CLAMP_WAIT_MS", "任务2抓取2 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("TASK2_GRUB3_CLAMP_HOLD_MS", "任务2抓取2 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("TASK2_GRUB3_TURNTABLE_WAIT_MS", "任务2抓取2 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("TASK2_GRUB3_RELEASE_WAIT_MS", "任务2抓取2 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("TASK2_GRUB3_RELEASE_HOLD_MS", "任务2抓取2 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("TASK2_GRUB3_HOME_WAIT_MS", "任务2抓取2 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_GRUB3_OPEN_AFTER_HOME_WAIT_MS", "任务2抓取2 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("TASK2_GRUB5_OPEN_WAIT_MS", "任务2抓取3 张开等待", "任务时序", "ms", 0, 5000, 10, None, "抓取开始时夹爪全张开后的等待"),
+    ParameterSpec("TASK2_GRUB5_CLAMP_WAIT_MS", "任务2抓取3 地面夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "地面夹紧物块后的舵机等待"),
+    ParameterSpec("TASK2_GRUB5_CLAMP_HOLD_MS", "任务2抓取3 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持时间"),
+    ParameterSpec("TASK2_GRUB5_TURNTABLE_WAIT_MS", "任务2抓取3 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("TASK2_GRUB5_RELEASE_WAIT_MS", "任务2抓取3 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开夹爪后的等待"),
+    ParameterSpec("TASK2_GRUB5_RELEASE_HOLD_MS", "任务2抓取3 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持时间"),
+    ParameterSpec("TASK2_GRUB5_HOME_WAIT_MS", "任务2抓取3 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_GRUB5_OPEN_AFTER_HOME_WAIT_MS", "任务2抓取3 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
+    ParameterSpec("PUT1_TURNTABLE_WAIT_MS", "放置1 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("PUT1_PICK_OPEN_WAIT_MS", "放置1 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧夹爪张开后的等待"),
+    ParameterSpec("PUT1_CLAMP_WAIT_MS", "放置1 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧物块后的等待"),
+    ParameterSpec("PUT1_CLAMP_HOLD_MS", "放置1 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧并升到转运高度后的保持"),
+    ParameterSpec("PUT1_HOME_WAIT_MS", "放置1 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("PUT1_STAGE_INTERVAL_MS", "放置1 分段张开间隔", "任务时序", "ms", 0, 5000, 10, None, "地面放置时分段松开到全张开的间隔"),
+    ParameterSpec("PUT1_FINAL_OPEN_HOLD_MS", "放置1 最后张开保持", "任务时序", "ms", 0, 5000, 10, None, "地面放置最后完全张开后的额外保持（默认 0）"),
+    ParameterSpec("PUT2_TURNTABLE_WAIT_MS", "放置2 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("PUT2_PICK_OPEN_WAIT_MS", "放置2 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧夹爪张开后的等待"),
+    ParameterSpec("PUT2_CLAMP_WAIT_MS", "放置2 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧物块后的等待"),
+    ParameterSpec("PUT2_CLAMP_HOLD_MS", "放置2 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧并升到转运高度后的保持"),
+    ParameterSpec("PUT2_HOME_WAIT_MS", "放置2 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("PUT2_STAGE_INTERVAL_MS", "放置2 分段张开间隔", "任务时序", "ms", 0, 5000, 10, None, "地面放置时分段松开到全张开的间隔"),
+    ParameterSpec("PUT2_FINAL_OPEN_HOLD_MS", "放置2 最后张开保持", "任务时序", "ms", 0, 5000, 10, None, "地面放置最后完全张开后的额外保持（默认 0）"),
+    ParameterSpec("PUT3_TURNTABLE_WAIT_MS", "放置3 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("PUT3_PICK_OPEN_WAIT_MS", "放置3 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧夹爪张开后的等待"),
+    ParameterSpec("PUT3_CLAMP_WAIT_MS", "放置3 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧物块后的等待"),
+    ParameterSpec("PUT3_CLAMP_HOLD_MS", "放置3 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧并升到转运高度后的保持"),
+    ParameterSpec("PUT3_HOME_WAIT_MS", "放置3 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("PUT3_STAGE_INTERVAL_MS", "放置3 分段张开间隔", "任务时序", "ms", 0, 5000, 10, None, "地面放置时分段松开到全张开的间隔"),
+    ParameterSpec("PUT3_FINAL_OPEN_HOLD_MS", "放置3 最后张开保持", "任务时序", "ms", 0, 5000, 10, None, "地面放置最后完全张开后的额外保持（默认 0）"),
+    ParameterSpec("PUT4_TURNTABLE_WAIT_MS", "放置4 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("PUT4_PICK_OPEN_WAIT_MS", "放置4 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧夹爪张开后的等待"),
+    ParameterSpec("PUT4_CLAMP_WAIT_MS", "放置4 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧物块后的等待"),
+    ParameterSpec("PUT4_CLAMP_HOLD_MS", "放置4 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧并升到转运高度后的保持"),
+    ParameterSpec("PUT4_HOME_WAIT_MS", "放置4 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("PUT4_STAGE_INTERVAL_MS", "放置4 分段张开间隔", "任务时序", "ms", 0, 5000, 10, None, "地面放置时分段松开到全张开的间隔"),
+    ParameterSpec("PUT4_FINAL_OPEN_HOLD_MS", "放置4 最后张开保持", "任务时序", "ms", 0, 5000, 10, None, "地面放置最后完全张开后的额外保持（默认 0）"),
+    ParameterSpec("PUT5_TURNTABLE_WAIT_MS", "放置5 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("PUT5_PICK_OPEN_WAIT_MS", "放置5 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧夹爪张开后的等待"),
+    ParameterSpec("PUT5_CLAMP_WAIT_MS", "放置5 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧物块后的等待"),
+    ParameterSpec("PUT5_CLAMP_HOLD_MS", "放置5 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧并升到转运高度后的保持"),
+    ParameterSpec("PUT5_HOME_WAIT_MS", "放置5 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("PUT5_STAGE_INTERVAL_MS", "放置5 分段张开间隔", "任务时序", "ms", 0, 5000, 10, None, "地面放置时分段松开到全张开的间隔"),
+    ParameterSpec("PUT5_FINAL_OPEN_HOLD_MS", "放置5 最后张开保持", "任务时序", "ms", 0, 5000, 10, None, "地面放置最后完全张开后的额外保持（默认 0）"),
+    ParameterSpec("TASK2_PLACE1_RETRACT_WAIT_MS", "任务2放置1（冠军） 收回等待", "任务时序", "ms", 0, 5000, 10, None, "机械臂收回后的等待"),
+    ParameterSpec("TASK2_PLACE1_TURNTABLE_WAIT_MS", "任务2放置1（冠军） 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("TASK2_PLACE1_RELEASE_WAIT_MS", "任务2放置1（冠军） 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧张开后的等待"),
+    ParameterSpec("TASK2_PLACE1_CLAMP_WAIT_MS", "任务2放置1（冠军） 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧奖杯后的等待"),
+    ParameterSpec("TASK2_PLACE1_CLAMP_HOLD_MS", "任务2放置1（冠军） 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧后升到回正安全高度的保持"),
+    ParameterSpec("TASK2_PLACE1_EXTEND_WAIT_MS", "任务2放置1（冠军） 前伸等待", "任务时序", "ms", 0, 5000, 10, None, "前伸到位后的等待"),
+    ParameterSpec("TASK2_PLACE1_HOME_WAIT_MS", "任务2放置1（冠军） 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_PLACE1_OPEN_WAIT_MS", "任务2放置1（冠军） 领奖台张开等待", "任务时序", "ms", 0, 5000, 10, None, "领奖台上张开夹爪后的等待"),
+    ParameterSpec("TASK2_PLACE1_OPEN_HOLD_MS", "任务2放置1（冠军） 领奖台张开保持", "任务时序", "ms", 0, 5000, 10, None, "领奖台张开后的保持"),
+    ParameterSpec("TASK2_PLACE2_RETRACT_WAIT_MS", "任务2放置2（亚军） 收回等待", "任务时序", "ms", 0, 5000, 10, None, "机械臂收回后的等待"),
+    ParameterSpec("TASK2_PLACE2_TURNTABLE_WAIT_MS", "任务2放置2（亚军） 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("TASK2_PLACE2_RELEASE_WAIT_MS", "任务2放置2（亚军） 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧张开后的等待"),
+    ParameterSpec("TASK2_PLACE2_CLAMP_WAIT_MS", "任务2放置2（亚军） 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧奖杯后的等待"),
+    ParameterSpec("TASK2_PLACE2_CLAMP_HOLD_MS", "任务2放置2（亚军） 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧后升到回正安全高度的保持"),
+    ParameterSpec("TASK2_PLACE2_EXTEND_WAIT_MS", "任务2放置2（亚军） 前伸等待", "任务时序", "ms", 0, 5000, 10, None, "前伸到位后的等待"),
+    ParameterSpec("TASK2_PLACE2_HOME_WAIT_MS", "任务2放置2（亚军） 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_PLACE2_OPEN_WAIT_MS", "任务2放置2（亚军） 领奖台张开等待", "任务时序", "ms", 0, 5000, 10, None, "领奖台上张开夹爪后的等待"),
+    ParameterSpec("TASK2_PLACE2_OPEN_HOLD_MS", "任务2放置2（亚军） 领奖台张开保持", "任务时序", "ms", 0, 5000, 10, None, "领奖台张开后的保持"),
+    ParameterSpec("TASK2_PLACE3_RETRACT_WAIT_MS", "任务2放置3（季军） 收回等待", "任务时序", "ms", 0, 5000, 10, None, "机械臂收回后的等待"),
+    ParameterSpec("TASK2_PLACE3_TURNTABLE_WAIT_MS", "任务2放置3（季军） 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到舵盘后的等待"),
+    ParameterSpec("TASK2_PLACE3_RELEASE_WAIT_MS", "任务2放置3（季军） 张开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘侧张开后的等待"),
+    ParameterSpec("TASK2_PLACE3_CLAMP_WAIT_MS", "任务2放置3（季军） 舵盘夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "从舵盘夹紧奖杯后的等待"),
+    ParameterSpec("TASK2_PLACE3_CLAMP_HOLD_MS", "任务2放置3（季军） 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧后升到回正安全高度的保持"),
+    ParameterSpec("TASK2_PLACE3_EXTEND_WAIT_MS", "任务2放置3（季军） 前伸等待", "任务时序", "ms", 0, 5000, 10, None, "前伸到位后的等待"),
+    ParameterSpec("TASK2_PLACE3_HOME_WAIT_MS", "任务2放置3（季军） 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("TASK2_PLACE3_OPEN_WAIT_MS", "任务2放置3（季军） 领奖台张开等待", "任务时序", "ms", 0, 5000, 10, None, "领奖台上张开夹爪后的等待"),
+    ParameterSpec("TASK2_PLACE3_OPEN_HOLD_MS", "任务2放置3（季军） 领奖台张开保持", "任务时序", "ms", 0, 5000, 10, None, "领奖台张开后的保持"),
+    ParameterSpec("CUBOID_OPEN_WAIT_MS", "长方体 张开等待", "任务时序", "ms", 0, 5000, 10, None, "mode 21/22 开始抓取时夹爪全张开后的等待"),
+    ParameterSpec("CUBOID_PRE_CLOSE_WAIT_MS", "长方体 预闭合等待", "任务时序", "ms", 0, 5000, 10, None, "长方体预闭合后的等待"),
+    ParameterSpec("CUBOID_CLAMP_WAIT_MS", "长方体 夹紧等待", "任务时序", "ms", 0, 5000, 10, None, "摇摆后完全夹紧的等待"),
+    ParameterSpec("CUBOID_CLAMP_HOLD_MS", "长方体 夹紧后保持", "任务时序", "ms", 0, 5000, 10, None, "夹紧并升到转运高度后的保持"),
+    ParameterSpec("CUBOID_TURNTABLE_WAIT_MS", "长方体 转台到位等待", "任务时序", "ms", 0, 5000, 10, None, "转台转到目标舵盘后的等待"),
+    ParameterSpec("CUBOID_RELEASE_WAIT_MS", "长方体 松开等待", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的等待"),
+    ParameterSpec("CUBOID_RELEASE_HOLD_MS", "长方体 松开后保持", "任务时序", "ms", 0, 5000, 10, None, "舵盘上松开后的保持"),
+    ParameterSpec("CUBOID_HOME_WAIT_MS", "长方体 回正等待", "任务时序", "ms", 0, 5000, 10, None, "转台回正后的等待"),
+    ParameterSpec("CUBOID_OPEN_AFTER_HOME_WAIT_MS", "长方体 回正后张开等待", "任务时序", "ms", 0, 5000, 10, None, "回正后夹爪张开的等待"),
 )
 
 PARAMETER_BY_DEFINE = {item.define: item for item in PARAMETERS}
 GROUPS = ("Servo1 伸缩", "Servo2 夹爪", "Servo3 底部旋转", "升降高度", "速度与延时")
+
+
+def _timing_specs(prefix: str) -> tuple[ParameterSpec, ...]:
+    return tuple(spec for spec in PARAMETERS if spec.define.startswith(prefix))
+
+
+def _timing_specs_named(names: tuple[str, ...]) -> tuple[ParameterSpec, ...]:
+    by_define = {spec.define: spec for spec in PARAMETERS}
+    return tuple(by_define[name] for name in names)
+
+
+TIMING_OPERATIONS = (
+    ("任务1 抓取 → 舵盘1", "GRUB1", "mode 7", _timing_specs("GRUB1_")),
+    ("任务1 抓取 → 舵盘2", "GRUB2", "mode 8", _timing_specs("GRUB2_")),
+    ("任务1 抓取 → 舵盘3", "GRUB3", "mode 9", _timing_specs("GRUB3_")),
+    ("任务1 抓取 → 舵盘4", "GRUB4", "mode 10", _timing_specs("GRUB4_")),
+    ("任务1 抓取 → 舵盘5", "GRUB5", "mode 12", _timing_specs("GRUB5_")),
+    ("任务2 抓取1 → 舵盘1", "TASK2_GRUB1", "mode 42", _timing_specs("TASK2_GRUB1_")),
+    ("任务2 抓取2 → 舵盘3", "TASK2_GRUB3", "mode 43", _timing_specs("TASK2_GRUB3_")),
+    ("任务2 抓取3 → 舵盘5", "TASK2_GRUB5", "mode 44", _timing_specs("TASK2_GRUB5_")),
+    ("任务1 放置 舵盘1 → 地面", "PUT1", "mode 14", _timing_specs("PUT1_")),
+    ("任务1 放置 舵盘2 → 地面", "PUT2", "mode 15", _timing_specs("PUT2_")),
+    ("任务1 放置 舵盘3 → 地面", "PUT3", "mode 16", _timing_specs("PUT3_")),
+    ("任务1 放置 舵盘4 → 地面", "PUT4", "mode 17", _timing_specs("PUT4_")),
+    ("任务1 放置 舵盘5 → 地面", "PUT5", "mode 18", _timing_specs("PUT5_")),
+    ("任务2 放置1 舵盘1→冠军", "TASK2_PLACE1", "mode 33", _timing_specs("TASK2_PLACE1_")),
+    ("任务2 放置2 舵盘3→亚军", "TASK2_PLACE2", "mode 34", _timing_specs("TASK2_PLACE2_")),
+    ("任务2 放置3 舵盘5→季军", "TASK2_PLACE3", "mode 35", _timing_specs("TASK2_PLACE3_")),
+    ("长方体 抓取 → 舵盘2/4", "CUBOID", "mode 21/22",
+     _timing_specs("CUBOID_") + _timing_specs_named(("SERVO3_CUBOID_WIGGLE_STEP_MS",))),
+)
 
 
 TASK_GROUPS = (
@@ -184,6 +354,10 @@ TASK_GROUPS = (
     (
         "任务1：舵盘 → 地面",
         (("舵盘1", 14), ("舵盘2", 15), ("舵盘3", 16), ("舵盘4", 17), ("舵盘5", 18)),
+    ),
+    (
+        "任务1：长方体抓取 → 舵盘",
+        (("长方体→舵盘2", 21), ("长方体→舵盘4", 22)),
     ),
     (
         "任务2：地面奖杯 → 舵盘",
@@ -466,6 +640,7 @@ class HardwareTuningApp(tk.Tk):
         self.loaded_values: dict[str, int] = {}
         self.value_vars = {spec.define: tk.StringVar() for spec in PARAMETERS}
         self.degree_vars: dict[str, tk.StringVar] = {}
+        self._timing_traced: set[str] = set()
         self.servo2_manual_var = tk.StringVar(value="")
         self.servo2_manual_degree_var = tk.StringVar(value="")
         self.servo2_manual_var.trace_add("write", lambda *_args: self._update_servo2_manual_degree())
@@ -543,15 +718,18 @@ class HardwareTuningApp(tk.Tk):
         self.notebook = ttk.Notebook(outer)
         self.notebook.pack(fill="both", expand=True)
         parameter_tab = ttk.Frame(self.notebook, padding=8)
+        timing_tab = ttk.Frame(self.notebook, padding=8)
         task_tab = ttk.Frame(self.notebook, padding=8)
         build_tab = ttk.Frame(self.notebook, padding=8)
         log_tab = ttk.Frame(self.notebook, padding=8)
         self.notebook.add(parameter_tab, text="参数标定")
+        self.notebook.add(timing_tab, text="任务时序（二级）")
         self.notebook.add(task_tab, text="任务试跑")
         self.notebook.add(build_tab, text="保存 / 编译 / 烧录")
         self.notebook.add(log_tab, text="通信与构建日志")
 
         self._build_parameter_tab(parameter_tab)
+        self._build_timing_tab(timing_tab)
         self._build_task_tab(task_tab)
         self._build_build_tab(build_tab)
         self._build_log_tab(log_tab)
@@ -659,8 +837,103 @@ class HardwareTuningApp(tk.Tk):
             ttk.Label(parent, text="保存后生效", foreground="#666666").grid(row=row, column=4, sticky="w", padx=4)
         ttk.Label(parent, text=spec.description).grid(row=row, column=5, sticky="w", padx=4)
 
+    def _build_timing_tab(self, parent: ttk.Frame) -> None:
+        selector = ttk.LabelFrame(parent, text="选择动作（二级界面：每个舵盘/动作的等待时间独立）", padding=8)
+        selector.pack(fill="x", pady=(0, 8))
+        self.timing_op_buttons: list[ttk.Button] = []
+        for index, (label, prefix, mode_desc, _params) in enumerate(TIMING_OPERATIONS):
+            button = ttk.Button(
+                selector,
+                text=f"{label}\n{prefix} · {mode_desc}",
+                command=lambda p=label: self._show_timing_operation(p),
+                width=18,
+            )
+            button.grid(row=index // 5, column=index % 5, sticky="ew", padx=4, pady=4)
+            selector.columnconfigure(index % 5, weight=1)
+            self.timing_op_buttons.append(button)
+
+        self.timing_detail = ttk.Frame(parent, padding=4)
+        self.timing_detail.pack(fill="both", expand=True)
+        if TIMING_OPERATIONS:
+            self._show_timing_operation(TIMING_OPERATIONS[0][0])
+
+    def _show_timing_operation(self, operation_name: str) -> None:
+        operation = next(
+            item for item in TIMING_OPERATIONS if item[0] == operation_name
+        )
+        label, _prefix, mode_desc, specs = operation
+        for child in self.timing_detail.winfo_children():
+            child.destroy()
+
+        frame = ttk.LabelFrame(
+            self.timing_detail,
+            text=f"{label}  ·  {mode_desc}  ·  所有值为 ms",
+            padding=10,
+        )
+        frame.pack(fill="both", expand=True)
+        headings = ("动作", "数值", "微调", "说明")
+        for column, heading in enumerate(headings):
+            ttk.Label(frame, text=heading, style="Status.TLabel").grid(
+                row=0, column=column, sticky="w", padx=4, pady=(0, 4)
+            )
+        frame.columnconfigure(3, weight=1)
+
+        for row, spec in enumerate(specs, start=1):
+            variable = self.value_vars[spec.define]
+            if spec.define not in self._timing_traced:
+                variable.trace_add("write", lambda *_args: self._on_parameter_changed())
+                self._timing_traced.add(spec.define)
+            ttk.Label(frame, text=spec.label, width=22).grid(
+                row=row, column=0, sticky="w", padx=4, pady=3
+            )
+            ttk.Spinbox(
+                frame,
+                textvariable=variable,
+                from_=spec.minimum,
+                to=spec.maximum,
+                increment=spec.step,
+                width=10,
+            ).grid(row=row, column=1, sticky="w", padx=4, pady=3)
+            adjust = ttk.Frame(frame)
+            adjust.grid(row=row, column=2, sticky="w", padx=4)
+            ttk.Button(
+                adjust,
+                text=f"−{spec.step}",
+                width=6,
+                command=lambda s=spec: self._nudge(s, -s.step),
+            ).pack(side="left")
+            ttk.Button(
+                adjust,
+                text=f"+{spec.step}",
+                width=6,
+                command=lambda s=spec: self._nudge(s, s.step),
+            ).pack(side="left", padx=(3, 0))
+            ttk.Label(frame, text=spec.description, wraplength=680).grid(
+                row=row, column=3, sticky="w", padx=4, pady=3
+            )
+
+        hint = ttk.Label(
+            self.timing_detail,
+            text="修改后到“保存 / 编译 / 烧录”页写回源码生效；可切换到“任务试跑”页用对应 mode 实测。",
+            style="Warn.TLabel",
+        )
+        hint.pack(anchor="w", pady=(6, 0))
+
     def _build_task_tab(self, parent: ttk.Frame) -> None:
-        warning = ttk.LabelFrame(parent, text="操作前确认", padding=10)
+        host = ttk.Frame(parent)
+        host.pack(fill="both", expand=True)
+        canvas = tk.Canvas(host, highlightthickness=0)
+        scroll = ttk.Scrollbar(host, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        body = ttk.Frame(canvas, padding=(0, 0, 8, 0))
+        window = canvas.create_window((0, 0), window=body, anchor="nw")
+        body.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+        canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-e.delta / 120), "units"))
+
+        warning = ttk.LabelFrame(body, text="操作前确认", padding=10)
         warning.pack(fill="x", pady=(0, 10))
         ttk.Label(
             warning,
@@ -670,7 +943,7 @@ class HardwareTuningApp(tk.Tk):
         ).pack(anchor="w")
 
         for title, actions in TASK_GROUPS:
-            frame = ttk.LabelFrame(parent, text=title, padding=10)
+            frame = ttk.LabelFrame(body, text=title, padding=10)
             frame.pack(fill="x", pady=6)
             for index, (label, mode) in enumerate(actions):
                 button = ttk.Button(
@@ -683,7 +956,7 @@ class HardwareTuningApp(tk.Tk):
                 frame.columnconfigure(index, weight=1)
                 self.action_buttons.append(button)
 
-        manual = ttk.LabelFrame(parent, text="独立动作与初始化", padding=10)
+        manual = ttk.LabelFrame(body, text="独立动作与初始化", padding=10)
         manual.pack(fill="x", pady=6)
         for index, (label, mode, needs_lift) in enumerate(MANUAL_ACTIONS):
             button = ttk.Button(

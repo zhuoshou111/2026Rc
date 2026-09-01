@@ -15,6 +15,8 @@
  *   6: signed Y fine movement in mm, payload[2] (int8)
  *   7/8/9/10/12: pick from front and place to disc 1/2/3/4/5
  *   14/15/16/17/18: reverse disc 1/2/3/4/5 back to front
+ *   21/22: grab a cuboid from the ground with claw pre-close and a quick
+ *          turntable wiggle, then store it on disc 2 / disc 4
  *   33/34/35: task 2, disc 1/3/5 to champion/runner-up/third-place
  *   36: Servo1 task 2 extension position
  *   52: Servo1 retract to 270 degrees
@@ -64,7 +66,11 @@
 #define SERVO2_TASK2_RELEASE_PULSE_US      1173u  /* 80 degrees. */
 #define SERVO2_GROUND_RELEASE_STAGE_PULSE_US 1018u /* 80 degrees before full ground release. */
 #define SERVO2_CLAMP_PULSE_US              1270u  /* 100 degrees. */
+#define SERVO2_CUBOID_PRE_CLOSE_PULSE_US    1018u  /* Cuboid pre-close before the wiggle. */
 #define SERVO3_HOME_PULSE_US                678u  /* 24 degrees. */
+#define SERVO3_CUBOID_WIGGLE_LOW_PULSE_US    500u  /* 0 degrees. */
+#define SERVO3_CUBOID_WIGGLE_HIGH_PULSE_US   856u  /* 48 degrees. */
+#define SERVO3_CUBOID_WIGGLE_STEP_MS         150u  /* Quick step settle for the wiggle. */
 #define SERVO3_DISC1_PULSE_US              1675u  /* 158 degrees. */
 #define SERVO3_DISC2_PULSE_US              1855u  /* 183 degrees. */
 #define SERVO3_DISC3_PULSE_US              2014u  /* Calibrated disc 3 position. */
@@ -78,14 +84,266 @@
 #define ARM_ACTION_HOLD_MS                  200u
 #define GROUND_RELEASE_STAGE_INTERVAL_MS    100u
 
+/* Per-disc/per-operation timing for the grab/place task routines
+ * (all in ms). Defaults keep the previous shared settle/hold behaviour;
+ * tune each value to shorten the race run. Task1 grabs/puts are
+ * independent per disc; task2 grab/place and cuboid grab use their
+ * own shared sets. */
+#define GRUB1_OPEN_WAIT_MS                      380u
+#define GRUB1_CLAMP_WAIT_MS                     380u
+#define GRUB1_CLAMP_HOLD_MS                     200u
+#define GRUB1_TURNTABLE_WAIT_MS                 850u
+#define GRUB1_RELEASE_WAIT_MS                   380u
+#define GRUB1_RELEASE_HOLD_MS                   200u
+#define GRUB1_HOME_WAIT_MS                      500u
+#define GRUB1_OPEN_AFTER_HOME_WAIT_MS           380u
+#define GRUB2_OPEN_WAIT_MS                      380u
+#define GRUB2_CLAMP_WAIT_MS                     380u
+#define GRUB2_CLAMP_HOLD_MS                     200u
+#define GRUB2_TURNTABLE_WAIT_MS                 850u
+#define GRUB2_RELEASE_WAIT_MS                   380u
+#define GRUB2_RELEASE_HOLD_MS                   200u
+#define GRUB2_HOME_WAIT_MS                      500u
+#define GRUB2_OPEN_AFTER_HOME_WAIT_MS           380u
+#define GRUB3_OPEN_WAIT_MS                      380u
+#define GRUB3_CLAMP_WAIT_MS                     380u
+#define GRUB3_CLAMP_HOLD_MS                     200u
+#define GRUB3_TURNTABLE_WAIT_MS                 850u
+#define GRUB3_RELEASE_WAIT_MS                   380u
+#define GRUB3_RELEASE_HOLD_MS                   200u
+#define GRUB3_HOME_WAIT_MS                      500u
+#define GRUB3_OPEN_AFTER_HOME_WAIT_MS           380u
+#define GRUB4_OPEN_WAIT_MS                      380u
+#define GRUB4_CLAMP_WAIT_MS                     380u
+#define GRUB4_CLAMP_HOLD_MS                     200u
+#define GRUB4_TURNTABLE_WAIT_MS                 850u
+#define GRUB4_RELEASE_WAIT_MS                   380u
+#define GRUB4_RELEASE_HOLD_MS                   200u
+#define GRUB4_HOME_WAIT_MS                      500u
+#define GRUB4_OPEN_AFTER_HOME_WAIT_MS           380u
+#define GRUB5_OPEN_WAIT_MS                      380u
+#define GRUB5_CLAMP_WAIT_MS                     380u
+#define GRUB5_CLAMP_HOLD_MS                     200u
+#define GRUB5_TURNTABLE_WAIT_MS                 850u
+#define GRUB5_RELEASE_WAIT_MS                   380u
+#define GRUB5_RELEASE_HOLD_MS                   200u
+#define GRUB5_HOME_WAIT_MS                      500u
+#define GRUB5_OPEN_AFTER_HOME_WAIT_MS           380u
+#define TASK2_GRUB1_OPEN_WAIT_MS                      380u
+#define TASK2_GRUB1_CLAMP_WAIT_MS                     380u
+#define TASK2_GRUB1_CLAMP_HOLD_MS                     200u
+#define TASK2_GRUB1_TURNTABLE_WAIT_MS                 850u
+#define TASK2_GRUB1_RELEASE_WAIT_MS                   380u
+#define TASK2_GRUB1_RELEASE_HOLD_MS                   200u
+#define TASK2_GRUB1_HOME_WAIT_MS                      500u
+#define TASK2_GRUB1_OPEN_AFTER_HOME_WAIT_MS           380u
+#define TASK2_GRUB3_OPEN_WAIT_MS                      380u
+#define TASK2_GRUB3_CLAMP_WAIT_MS                     380u
+#define TASK2_GRUB3_CLAMP_HOLD_MS                     200u
+#define TASK2_GRUB3_TURNTABLE_WAIT_MS                 850u
+#define TASK2_GRUB3_RELEASE_WAIT_MS                   380u
+#define TASK2_GRUB3_RELEASE_HOLD_MS                   200u
+#define TASK2_GRUB3_HOME_WAIT_MS                      500u
+#define TASK2_GRUB3_OPEN_AFTER_HOME_WAIT_MS           380u
+#define TASK2_GRUB5_OPEN_WAIT_MS                      380u
+#define TASK2_GRUB5_CLAMP_WAIT_MS                     380u
+#define TASK2_GRUB5_CLAMP_HOLD_MS                     200u
+#define TASK2_GRUB5_TURNTABLE_WAIT_MS                 850u
+#define TASK2_GRUB5_RELEASE_WAIT_MS                   380u
+#define TASK2_GRUB5_RELEASE_HOLD_MS                   200u
+#define TASK2_GRUB5_HOME_WAIT_MS                      500u
+#define TASK2_GRUB5_OPEN_AFTER_HOME_WAIT_MS           380u
+#define PUT1_TURNTABLE_WAIT_MS                 850u
+#define PUT1_PICK_OPEN_WAIT_MS                 380u
+#define PUT1_CLAMP_WAIT_MS                     380u
+#define PUT1_CLAMP_HOLD_MS                     200u
+#define PUT1_HOME_WAIT_MS                      850u
+#define PUT1_STAGE_INTERVAL_MS                 100u
+#define PUT1_FINAL_OPEN_HOLD_MS                0u
+#define PUT2_TURNTABLE_WAIT_MS                 850u
+#define PUT2_PICK_OPEN_WAIT_MS                 380u
+#define PUT2_CLAMP_WAIT_MS                     380u
+#define PUT2_CLAMP_HOLD_MS                     200u
+#define PUT2_HOME_WAIT_MS                      850u
+#define PUT2_STAGE_INTERVAL_MS                 100u
+#define PUT2_FINAL_OPEN_HOLD_MS                0u
+#define PUT3_TURNTABLE_WAIT_MS                 850u
+#define PUT3_PICK_OPEN_WAIT_MS                 380u
+#define PUT3_CLAMP_WAIT_MS                     380u
+#define PUT3_CLAMP_HOLD_MS                     200u
+#define PUT3_HOME_WAIT_MS                      850u
+#define PUT3_STAGE_INTERVAL_MS                 100u
+#define PUT3_FINAL_OPEN_HOLD_MS                0u
+#define PUT4_TURNTABLE_WAIT_MS                 850u
+#define PUT4_PICK_OPEN_WAIT_MS                 380u
+#define PUT4_CLAMP_WAIT_MS                     380u
+#define PUT4_CLAMP_HOLD_MS                     200u
+#define PUT4_HOME_WAIT_MS                      850u
+#define PUT4_STAGE_INTERVAL_MS                 100u
+#define PUT4_FINAL_OPEN_HOLD_MS                0u
+#define PUT5_TURNTABLE_WAIT_MS                 850u
+#define PUT5_PICK_OPEN_WAIT_MS                 380u
+#define PUT5_CLAMP_WAIT_MS                     380u
+#define PUT5_CLAMP_HOLD_MS                     200u
+#define PUT5_HOME_WAIT_MS                      850u
+#define PUT5_STAGE_INTERVAL_MS                 100u
+#define PUT5_FINAL_OPEN_HOLD_MS                0u
+#define TASK2_PLACE1_RETRACT_WAIT_MS                   200u
+#define TASK2_PLACE1_TURNTABLE_WAIT_MS                 850u
+#define TASK2_PLACE1_RELEASE_WAIT_MS                   380u
+#define TASK2_PLACE1_CLAMP_WAIT_MS                     380u
+#define TASK2_PLACE1_CLAMP_HOLD_MS                     200u
+#define TASK2_PLACE1_EXTEND_WAIT_MS                    200u
+#define TASK2_PLACE1_HOME_WAIT_MS                      850u
+#define TASK2_PLACE1_OPEN_WAIT_MS                      380u
+#define TASK2_PLACE1_OPEN_HOLD_MS                      200u
+#define TASK2_PLACE2_RETRACT_WAIT_MS                   200u
+#define TASK2_PLACE2_TURNTABLE_WAIT_MS                 850u
+#define TASK2_PLACE2_RELEASE_WAIT_MS                   380u
+#define TASK2_PLACE2_CLAMP_WAIT_MS                     380u
+#define TASK2_PLACE2_CLAMP_HOLD_MS                     200u
+#define TASK2_PLACE2_EXTEND_WAIT_MS                    200u
+#define TASK2_PLACE2_HOME_WAIT_MS                      850u
+#define TASK2_PLACE2_OPEN_WAIT_MS                      380u
+#define TASK2_PLACE2_OPEN_HOLD_MS                      200u
+#define TASK2_PLACE3_RETRACT_WAIT_MS                   200u
+#define TASK2_PLACE3_TURNTABLE_WAIT_MS                 850u
+#define TASK2_PLACE3_RELEASE_WAIT_MS                   380u
+#define TASK2_PLACE3_CLAMP_WAIT_MS                     380u
+#define TASK2_PLACE3_CLAMP_HOLD_MS                     200u
+#define TASK2_PLACE3_EXTEND_WAIT_MS                    200u
+#define TASK2_PLACE3_HOME_WAIT_MS                      850u
+#define TASK2_PLACE3_OPEN_WAIT_MS                      380u
+#define TASK2_PLACE3_OPEN_HOLD_MS                      200u
+#define CUBOID_OPEN_WAIT_MS                      380u
+#define CUBOID_PRE_CLOSE_WAIT_MS                 380u
+#define CUBOID_CLAMP_WAIT_MS                     380u
+#define CUBOID_CLAMP_HOLD_MS                     200u
+#define CUBOID_TURNTABLE_WAIT_MS                 850u
+#define CUBOID_RELEASE_WAIT_MS                   380u
+#define CUBOID_RELEASE_HOLD_MS                   200u
+#define CUBOID_HOME_WAIT_MS                      500u
+#define CUBOID_OPEN_AFTER_HOME_WAIT_MS           380u
+
+typedef struct {
+    uint32_t open_wait_ms;
+    uint32_t clamp_wait_ms;
+    uint32_t clamp_hold_ms;
+    uint32_t turntable_wait_ms;
+    uint32_t release_wait_ms;
+    uint32_t release_hold_ms;
+    uint32_t home_wait_ms;
+    uint32_t open_after_home_wait_ms;
+} ArmGrubTiming;
+
+typedef struct {
+    uint32_t turntable_wait_ms;
+    uint32_t pick_open_wait_ms;
+    uint32_t clamp_wait_ms;
+    uint32_t clamp_hold_ms;
+    uint32_t home_wait_ms;
+    uint32_t stage_interval_ms;
+    uint32_t final_open_hold_ms;
+} ArmPutTiming;
+
+typedef struct {
+    uint32_t retract_wait_ms;
+    uint32_t turntable_wait_ms;
+    uint32_t release_wait_ms;
+    uint32_t clamp_wait_ms;
+    uint32_t clamp_hold_ms;
+    uint32_t extend_wait_ms;
+    uint32_t home_wait_ms;
+    uint32_t open_wait_ms;
+    uint32_t open_hold_ms;
+} ArmTask2PlaceTiming;
+
+typedef struct {
+    uint32_t open_wait_ms;
+    uint32_t pre_close_wait_ms;
+    uint32_t clamp_wait_ms;
+    uint32_t clamp_hold_ms;
+    uint32_t turntable_wait_ms;
+    uint32_t release_wait_ms;
+    uint32_t release_hold_ms;
+    uint32_t home_wait_ms;
+    uint32_t open_after_home_wait_ms;
+} ArmCuboidTiming;
+
+static const ArmGrubTiming grub1_timing = {
+    GRUB1_OPEN_WAIT_MS, GRUB1_CLAMP_WAIT_MS, GRUB1_CLAMP_HOLD_MS, GRUB1_TURNTABLE_WAIT_MS, GRUB1_RELEASE_WAIT_MS, GRUB1_RELEASE_HOLD_MS, GRUB1_HOME_WAIT_MS, GRUB1_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmGrubTiming grub2_timing = {
+    GRUB2_OPEN_WAIT_MS, GRUB2_CLAMP_WAIT_MS, GRUB2_CLAMP_HOLD_MS, GRUB2_TURNTABLE_WAIT_MS, GRUB2_RELEASE_WAIT_MS, GRUB2_RELEASE_HOLD_MS, GRUB2_HOME_WAIT_MS, GRUB2_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmGrubTiming grub3_timing = {
+    GRUB3_OPEN_WAIT_MS, GRUB3_CLAMP_WAIT_MS, GRUB3_CLAMP_HOLD_MS, GRUB3_TURNTABLE_WAIT_MS, GRUB3_RELEASE_WAIT_MS, GRUB3_RELEASE_HOLD_MS, GRUB3_HOME_WAIT_MS, GRUB3_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmGrubTiming grub4_timing = {
+    GRUB4_OPEN_WAIT_MS, GRUB4_CLAMP_WAIT_MS, GRUB4_CLAMP_HOLD_MS, GRUB4_TURNTABLE_WAIT_MS, GRUB4_RELEASE_WAIT_MS, GRUB4_RELEASE_HOLD_MS, GRUB4_HOME_WAIT_MS, GRUB4_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmGrubTiming grub5_timing = {
+    GRUB5_OPEN_WAIT_MS, GRUB5_CLAMP_WAIT_MS, GRUB5_CLAMP_HOLD_MS, GRUB5_TURNTABLE_WAIT_MS, GRUB5_RELEASE_WAIT_MS, GRUB5_RELEASE_HOLD_MS, GRUB5_HOME_WAIT_MS, GRUB5_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmGrubTiming task2_grub1_timing = {
+    TASK2_GRUB1_OPEN_WAIT_MS, TASK2_GRUB1_CLAMP_WAIT_MS, TASK2_GRUB1_CLAMP_HOLD_MS, TASK2_GRUB1_TURNTABLE_WAIT_MS, TASK2_GRUB1_RELEASE_WAIT_MS, TASK2_GRUB1_RELEASE_HOLD_MS, TASK2_GRUB1_HOME_WAIT_MS, TASK2_GRUB1_OPEN_AFTER_HOME_WAIT_MS
+};
+static const ArmGrubTiming task2_grub3_timing = {
+    TASK2_GRUB3_OPEN_WAIT_MS, TASK2_GRUB3_CLAMP_WAIT_MS, TASK2_GRUB3_CLAMP_HOLD_MS, TASK2_GRUB3_TURNTABLE_WAIT_MS, TASK2_GRUB3_RELEASE_WAIT_MS, TASK2_GRUB3_RELEASE_HOLD_MS, TASK2_GRUB3_HOME_WAIT_MS, TASK2_GRUB3_OPEN_AFTER_HOME_WAIT_MS
+};
+static const ArmGrubTiming task2_grub5_timing = {
+    TASK2_GRUB5_OPEN_WAIT_MS, TASK2_GRUB5_CLAMP_WAIT_MS, TASK2_GRUB5_CLAMP_HOLD_MS, TASK2_GRUB5_TURNTABLE_WAIT_MS, TASK2_GRUB5_RELEASE_WAIT_MS, TASK2_GRUB5_RELEASE_HOLD_MS, TASK2_GRUB5_HOME_WAIT_MS, TASK2_GRUB5_OPEN_AFTER_HOME_WAIT_MS
+};
+
+static const ArmPutTiming put1_timing = {
+    PUT1_TURNTABLE_WAIT_MS, PUT1_PICK_OPEN_WAIT_MS, PUT1_CLAMP_WAIT_MS, PUT1_CLAMP_HOLD_MS, PUT1_HOME_WAIT_MS, PUT1_STAGE_INTERVAL_MS, PUT1_FINAL_OPEN_HOLD_MS
+};
+
+static const ArmPutTiming put2_timing = {
+    PUT2_TURNTABLE_WAIT_MS, PUT2_PICK_OPEN_WAIT_MS, PUT2_CLAMP_WAIT_MS, PUT2_CLAMP_HOLD_MS, PUT2_HOME_WAIT_MS, PUT2_STAGE_INTERVAL_MS, PUT2_FINAL_OPEN_HOLD_MS
+};
+
+static const ArmPutTiming put3_timing = {
+    PUT3_TURNTABLE_WAIT_MS, PUT3_PICK_OPEN_WAIT_MS, PUT3_CLAMP_WAIT_MS, PUT3_CLAMP_HOLD_MS, PUT3_HOME_WAIT_MS, PUT3_STAGE_INTERVAL_MS, PUT3_FINAL_OPEN_HOLD_MS
+};
+
+static const ArmPutTiming put4_timing = {
+    PUT4_TURNTABLE_WAIT_MS, PUT4_PICK_OPEN_WAIT_MS, PUT4_CLAMP_WAIT_MS, PUT4_CLAMP_HOLD_MS, PUT4_HOME_WAIT_MS, PUT4_STAGE_INTERVAL_MS, PUT4_FINAL_OPEN_HOLD_MS
+};
+
+static const ArmPutTiming put5_timing = {
+    PUT5_TURNTABLE_WAIT_MS, PUT5_PICK_OPEN_WAIT_MS, PUT5_CLAMP_WAIT_MS, PUT5_CLAMP_HOLD_MS, PUT5_HOME_WAIT_MS, PUT5_STAGE_INTERVAL_MS, PUT5_FINAL_OPEN_HOLD_MS
+};
+
+static const ArmTask2PlaceTiming task2_place1_timing = {
+    TASK2_PLACE1_RETRACT_WAIT_MS, TASK2_PLACE1_TURNTABLE_WAIT_MS, TASK2_PLACE1_RELEASE_WAIT_MS, TASK2_PLACE1_CLAMP_WAIT_MS, TASK2_PLACE1_CLAMP_HOLD_MS, TASK2_PLACE1_EXTEND_WAIT_MS, TASK2_PLACE1_HOME_WAIT_MS, TASK2_PLACE1_OPEN_WAIT_MS, TASK2_PLACE1_OPEN_HOLD_MS
+};
+static const ArmTask2PlaceTiming task2_place2_timing = {
+    TASK2_PLACE2_RETRACT_WAIT_MS, TASK2_PLACE2_TURNTABLE_WAIT_MS, TASK2_PLACE2_RELEASE_WAIT_MS, TASK2_PLACE2_CLAMP_WAIT_MS, TASK2_PLACE2_CLAMP_HOLD_MS, TASK2_PLACE2_EXTEND_WAIT_MS, TASK2_PLACE2_HOME_WAIT_MS, TASK2_PLACE2_OPEN_WAIT_MS, TASK2_PLACE2_OPEN_HOLD_MS
+};
+static const ArmTask2PlaceTiming task2_place3_timing = {
+    TASK2_PLACE3_RETRACT_WAIT_MS, TASK2_PLACE3_TURNTABLE_WAIT_MS, TASK2_PLACE3_RELEASE_WAIT_MS, TASK2_PLACE3_CLAMP_WAIT_MS, TASK2_PLACE3_CLAMP_HOLD_MS, TASK2_PLACE3_EXTEND_WAIT_MS, TASK2_PLACE3_HOME_WAIT_MS, TASK2_PLACE3_OPEN_WAIT_MS, TASK2_PLACE3_OPEN_HOLD_MS
+};
+
+static const ArmCuboidTiming cuboid_timing = {
+    CUBOID_OPEN_WAIT_MS, CUBOID_PRE_CLOSE_WAIT_MS, CUBOID_CLAMP_WAIT_MS, CUBOID_CLAMP_HOLD_MS, CUBOID_TURNTABLE_WAIT_MS, CUBOID_RELEASE_WAIT_MS, CUBOID_RELEASE_HOLD_MS, CUBOID_HOME_WAIT_MS, CUBOID_OPEN_AFTER_HOME_WAIT_MS
+};
+
 #define RPI_FRAME_PAYLOAD_SIZE               8u
-#define FIRMWARE_DIAGNOSTIC_VERSION         149u
+#define FIRMWARE_DIAGNOSTIC_VERSION         153u
 
 #define RPI_CMD_X_DISTANCE                    1u
 #define RPI_CMD_Y_DISTANCE                    2u
 #define RPI_CMD_ROTATE                        3u
 #define RPI_CMD_X_MM                          5u
 #define RPI_CMD_Y_MM                          6u
+#define RPI_CMD_GRUB_CUBOID_DISC2              21u
+#define RPI_CMD_GRUB_CUBOID_DISC4              22u
 #define RPI_CMD_GRUB_DISC1                    7u
 #define RPI_CMD_GRUB_DISC2                    8u
 #define RPI_CMD_GRUB_DISC3                    9u
@@ -444,10 +702,86 @@ static void Arm_Servo3Move(uint16_t pulse_us)
     delay_ms(SERVO3_SETTLE_MS);
 }
 
-static void Arm_Servo3HomeBeforeClawOpen(void)
+static void Arm_Servo1MoveWait(uint16_t pulse_us, uint32_t wait_ms)
 {
-    TIM_SetCompare4(TIM5, SERVO3_HOME_PULSE_US);
-    delay_ms(SERVO3_HOME_BEFORE_CLAW_OPEN_MS);
+    TIM_SetCompare2(TIM5, pulse_us);
+    delay_ms(wait_ms);
+}
+
+static void Arm_Servo2MoveWait(uint16_t pulse_us, uint32_t wait_ms)
+{
+    TIM_SetCompare3(TIM5, pulse_us);
+    delay_ms(wait_ms);
+}
+
+static void Arm_Servo3MoveWait(uint16_t pulse_us, uint32_t wait_ms)
+{
+    TIM_SetCompare4(TIM5, pulse_us);
+    delay_ms(wait_ms);
+}
+
+static const ArmGrubTiming *Arm_GrubTimingFromMode(uint8_t mode)
+{
+    switch (mode) {
+    case RPI_CMD_GRUB_DISC1:
+        return &grub1_timing;
+    case RPI_CMD_GRUB_DISC2:
+        return &grub2_timing;
+    case RPI_CMD_GRUB_DISC3:
+        return &grub3_timing;
+    case RPI_CMD_GRUB_DISC4:
+        return &grub4_timing;
+    case RPI_CMD_GRUB_DISC5:
+        return &grub5_timing;
+    default:
+        return &task2_grub1_timing;
+    }
+}
+
+static const ArmPutTiming *Arm_PutTimingFromMode(uint8_t mode)
+{
+    switch (mode) {
+    case RPI_CMD_PUT_DISC1:
+        return &put1_timing;
+    case RPI_CMD_PUT_DISC2:
+        return &put2_timing;
+    case RPI_CMD_PUT_DISC3:
+        return &put3_timing;
+    case RPI_CMD_PUT_DISC4:
+        return &put4_timing;
+    case RPI_CMD_PUT_DISC5:
+        return &put5_timing;
+    default:
+        return &put1_timing;
+    }
+}
+
+static const ArmGrubTiming *Arm_Task2GrubTimingFromMode(uint8_t mode)
+{
+    switch (mode) {
+    case RPI_CMD_TASK2_GRUB_CUP1:
+        return &task2_grub1_timing;
+    case RPI_CMD_TASK2_GRUB_CUP2:
+        return &task2_grub3_timing;
+    case RPI_CMD_TASK2_GRUB_CUP3:
+        return &task2_grub5_timing;
+    default:
+        return &task2_grub1_timing;
+    }
+}
+
+static const ArmTask2PlaceTiming *Arm_Task2PlaceTimingFromMode(uint8_t mode)
+{
+    switch (mode) {
+    case RPI_CMD_TASK2_PUT_1TO1:
+        return &task2_place1_timing;
+    case RPI_CMD_TASK2_PUT_2TO2:
+        return &task2_place2_timing;
+    case RPI_CMD_TASK2_PUT_3TO3:
+        return &task2_place3_timing;
+    default:
+        return &task2_place1_timing;
+    }
 }
 
 static uint8_t Arm_DiscPulseFromMode(uint8_t mode, uint16_t *disc_pulse_us)
@@ -546,70 +880,119 @@ static uint8_t Arm_Task2GrubPulseFromMode(uint8_t mode,
 }
 
 static void Arm_RunTask2Place(uint16_t disc_pulse_us,
-                              uint16_t podium_height_mm)
+                              uint16_t podium_height_mm,
+                              const ArmTask2PlaceTiming *timing)
 {
-    Arm_Servo1Move(SERVO1_RETRACT_PULSE_US);
+    Arm_Servo1MoveWait(SERVO1_RETRACT_PULSE_US, timing->retract_wait_ms);
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    Arm_Servo3Move(disc_pulse_us);
-    Arm_Servo2Move(SERVO2_TASK2_RELEASE_PULSE_US);
+    Arm_Servo3MoveWait(disc_pulse_us, timing->turntable_wait_ms);
+    Arm_Servo2MoveWait(SERVO2_TASK2_RELEASE_PULSE_US, timing->release_wait_ms);
 
     Lift_MoveToHeight(LIFT_TASK2_DISC_HEIGHT_MM);
-    Arm_Servo2Move(SERVO2_CLAMP_PULSE_US);
-    delay_ms(ARM_ACTION_HOLD_MS);
+    Arm_Servo2MoveWait(SERVO2_CLAMP_PULSE_US, timing->clamp_wait_ms);
+    delay_ms(timing->clamp_hold_ms);
 
     Lift_MoveToHeight(LIFT_TASK2_RETURN_CLEARANCE_MM);
-    Arm_Servo1Move(SERVO1_TASK2_EXTEND_PULSE_US);
-    Arm_Servo3Move(SERVO3_HOME_PULSE_US);
+    Arm_Servo1MoveWait(SERVO1_TASK2_EXTEND_PULSE_US, timing->extend_wait_ms);
+    Arm_Servo3MoveWait(SERVO3_HOME_PULSE_US, timing->home_wait_ms);
 
     Lift_MoveToPlaceHeightSlow(podium_height_mm);
-    Arm_Servo2Move(SERVO2_BOTTOM_OPEN_PULSE_US);
-    delay_ms(ARM_ACTION_HOLD_MS);
+    Arm_Servo2MoveWait(SERVO2_BOTTOM_OPEN_PULSE_US, timing->open_wait_ms);
+    delay_ms(timing->open_hold_ms);
 
     Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
 }
 
 static void Arm_RunGrubToDisc(uint16_t disc_pulse_us,
-                              uint16_t disc_release_pulse_us)
+                              uint16_t disc_release_pulse_us,
+                              const ArmGrubTiming *timing)
 {
-    Arm_Servo2Move(SERVO2_BOTTOM_OPEN_PULSE_US);
+    Arm_Servo2MoveWait(SERVO2_BOTTOM_OPEN_PULSE_US, timing->open_wait_ms);
 
     if (lift_height_mm != LIFT_GROUND_PICK_HEIGHT_MM) {
         Lift_MoveToHeight(LIFT_GROUND_PICK_HEIGHT_MM);
     }
-    Arm_Servo2Move(SERVO2_CLAMP_PULSE_US);
+    Arm_Servo2MoveWait(SERVO2_CLAMP_PULSE_US, timing->clamp_wait_ms);
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    delay_ms(ARM_ACTION_HOLD_MS);
+    delay_ms(timing->clamp_hold_ms);
 
-    Arm_Servo3Move(disc_pulse_us);
+    Arm_Servo3MoveWait(disc_pulse_us, timing->turntable_wait_ms);
 
     Lift_MoveToPlaceHeightSlow(LIFT_PLACE_HEIGHT_MM);
-    Arm_Servo2Move(disc_release_pulse_us);
-    delay_ms(ARM_ACTION_HOLD_MS);
+    Arm_Servo2MoveWait(disc_release_pulse_us, timing->release_wait_ms);
+    delay_ms(timing->release_hold_ms);
 
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    Arm_Servo3HomeBeforeClawOpen();
-    Arm_Servo2Move(SERVO2_BOTTOM_OPEN_PULSE_US);
+    Arm_Servo3MoveWait(SERVO3_HOME_PULSE_US, timing->home_wait_ms);
+    Arm_Servo2MoveWait(SERVO2_BOTTOM_OPEN_PULSE_US, timing->open_after_home_wait_ms);
     Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
 }
 
 static void Arm_RunPutFromDisc(uint16_t disc_pulse_us,
-                               uint16_t disc_pick_open_pulse_us)
+                               uint16_t disc_pick_open_pulse_us,
+                               const ArmPutTiming *timing)
 {
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    Arm_Servo3Move(disc_pulse_us);
-    Arm_Servo2Move(disc_pick_open_pulse_us);
+    Arm_Servo3MoveWait(disc_pulse_us, timing->turntable_wait_ms);
+    Arm_Servo2MoveWait(disc_pick_open_pulse_us, timing->pick_open_wait_ms);
 
     Lift_MoveToPlaceHeightSlow(LIFT_PLACE_HEIGHT_MM);
-    Arm_Servo2Move(SERVO2_CLAMP_PULSE_US);
-    delay_ms(ARM_ACTION_HOLD_MS);
+    Arm_Servo2MoveWait(SERVO2_CLAMP_PULSE_US, timing->clamp_wait_ms);
+    delay_ms(timing->clamp_hold_ms);
 
     Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
-    Arm_Servo3Move(SERVO3_HOME_PULSE_US);
+    Arm_Servo3MoveWait(SERVO3_HOME_PULSE_US, timing->home_wait_ms);
 
     Lift_MoveToPlaceHeightSlow(LIFT_GROUND_PLACE_HEIGHT_MM);
     TIM_SetCompare3(TIM5, SERVO2_GROUND_RELEASE_STAGE_PULSE_US);
-    delay_ms(GROUND_RELEASE_STAGE_INTERVAL_MS);
+    delay_ms(timing->stage_interval_ms);
     TIM_SetCompare3(TIM5, SERVO2_BOTTOM_OPEN_PULSE_US);
+    delay_ms(timing->final_open_hold_ms);
+    Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
+}
+
+static void Arm_TurntableWiggleCuboid(void)
+{
+    /* Quick two-swing wiggle around HOME so the cuboid face aligns
+     * with the claw: 24 -> 0 -> 24, then 24 -> 48 -> 24. */
+    TIM_SetCompare4(TIM5, SERVO3_CUBOID_WIGGLE_LOW_PULSE_US);
+    delay_ms(SERVO3_CUBOID_WIGGLE_STEP_MS);
+    TIM_SetCompare4(TIM5, SERVO3_HOME_PULSE_US);
+    delay_ms(SERVO3_CUBOID_WIGGLE_STEP_MS);
+
+    TIM_SetCompare4(TIM5, SERVO3_CUBOID_WIGGLE_HIGH_PULSE_US);
+    delay_ms(SERVO3_CUBOID_WIGGLE_STEP_MS);
+    TIM_SetCompare4(TIM5, SERVO3_HOME_PULSE_US);
+    delay_ms(SERVO3_CUBOID_WIGGLE_STEP_MS);
+}
+
+static void Arm_RunGrubCuboid(uint16_t disc_pulse_us,
+                              const ArmCuboidTiming *timing)
+{
+    Arm_Servo2MoveWait(SERVO2_BOTTOM_OPEN_PULSE_US, timing->open_wait_ms);
+
+    if (lift_height_mm != LIFT_GROUND_PICK_HEIGHT_MM) {
+        Lift_MoveToHeight(LIFT_GROUND_PICK_HEIGHT_MM);
+    }
+
+    /* Pre-close the claw around the cuboid, then wiggle the turntable
+     * so the cuboid face is gripped squarely before the full clamp. */
+    Arm_Servo2MoveWait(SERVO2_CUBOID_PRE_CLOSE_PULSE_US, timing->pre_close_wait_ms);
+    Arm_TurntableWiggleCuboid();
+
+    Arm_Servo2MoveWait(SERVO2_CLAMP_PULSE_US, timing->clamp_wait_ms);
+    Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
+    delay_ms(timing->clamp_hold_ms);
+
+    Arm_Servo3MoveWait(disc_pulse_us, timing->turntable_wait_ms);
+
+    Lift_MoveToPlaceHeightSlow(LIFT_PLACE_HEIGHT_MM);
+    Arm_Servo2MoveWait(SERVO2_DISC_RELEASE_PULSE_US, timing->release_wait_ms);
+    delay_ms(timing->release_hold_ms);
+
+    Lift_MoveToHeight(LIFT_TRANSFER_HEIGHT_MM);
+    Arm_Servo3MoveWait(SERVO3_HOME_PULSE_US, timing->home_wait_ms);
+    Arm_Servo2MoveWait(SERVO2_BOTTOM_OPEN_PULSE_US, timing->open_after_home_wait_ms);
     Lift_MoveToHeight(LIFT_PICK_HEIGHT_MM);
 }
 
@@ -1539,10 +1922,12 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
         if (Arm_IsPutMode(payload[0]) != 0u) {
             Arm_RunPutFromDisc(
                 disc_pulse_us,
-                Arm_DiscPickOpenPulseFromMode(payload[0]));
+                Arm_DiscPickOpenPulseFromMode(payload[0]),
+                Arm_PutTimingFromMode(payload[0]));
         } else {
             Arm_RunGrubToDisc(disc_pulse_us,
-                              SERVO2_DISC_RELEASE_PULSE_US);
+                              SERVO2_DISC_RELEASE_PULSE_US,
+                              Arm_GrubTimingFromMode(payload[0]));
         }
         return 1u;
 
@@ -1555,7 +1940,8 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
             podium_height_mm > LIFT_MAX_HEIGHT_MM) {
             return 0u;
         }
-        Arm_RunTask2Place(disc_pulse_us, podium_height_mm);
+        Arm_RunTask2Place(disc_pulse_us, podium_height_mm,
+                          Arm_Task2PlaceTimingFromMode(payload[0]));
         return 1u;
 
     case RPI_CMD_TASK2_GRUB_CUP1:
@@ -1565,8 +1951,17 @@ static uint8_t Chassis_HandleCommand(const uint8_t payload[RPI_FRAME_PAYLOAD_SIZ
             return 0u;
         }
         Arm_RunGrubToDisc(disc_pulse_us,
-                          SERVO2_DISC_RELEASE_PULSE_US);
+                          SERVO2_DISC_RELEASE_PULSE_US,
+                          Arm_Task2GrubTimingFromMode(payload[0]));
         return 1u;
+
+    case RPI_CMD_GRUB_CUBOID_DISC2:
+        Arm_RunGrubCuboid(SERVO3_DISC2_PULSE_US, &cuboid_timing);
+        return COMMAND_RESULT_DONE;
+
+    case RPI_CMD_GRUB_CUBOID_DISC4:
+        Arm_RunGrubCuboid(SERVO3_PUT_DISC4_PULSE_US, &cuboid_timing);
+        return COMMAND_RESULT_DONE;
 
     case RPI_CMD_RESET_ANGLE:
         Gyro_PrepareRuntimeReceiver();

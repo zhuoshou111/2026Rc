@@ -89,6 +89,12 @@ class MoveControl(object):
             self.send_buffer[1] = mode.value
         elif mode == Mode.put_5:
             self.send_buffer[1] = mode.value
+
+        # 从地面抓取长方体（预闭合+转台摇摆）放到舵盘2/4
+        elif mode == Mode.grub_cuboid_2:
+            self.send_buffer[1] = mode.value
+        elif mode == Mode.grub_cuboid_4:
+            self.send_buffer[1] = mode.value
             
             
         # 从三个位置放到冠亚季军台子
@@ -350,6 +356,14 @@ class MoveControl(object):
         self.__send_serial_msg(mode=Mode.grub_4)
     def grubFromGround5(self):
         self.__send_serial_msg(mode=Mode.grub_5)
+
+    # 从地面抓取长方体（预闭合+转台摇摆）放到舵盘2
+    def grub_cuboid_to_disc2(self):
+        self.__send_serial_msg(mode=Mode.grub_cuboid_2)
+
+    # 从地面抓取长方体（预闭合+转台摇摆）放到舵盘4
+    def grub_cuboid_to_disc4(self):
+        self.__send_serial_msg(mode=Mode.grub_cuboid_4)
         
            
         
